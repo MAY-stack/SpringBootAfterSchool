@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" th:href="@{/css/board.css}">
+<link th:href="@{/css/board.css}" rel="stylesheet" />
+<link th:href="@{/css/AfterSchool.css}" rel="stylesheet" />
+<title>After School :: 자유게시판 글 상세보기</title>
+<script>
+
+	//header에 있는 로그아웃 기능
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+	
+	const getCookie = (name) => {
+		
+		const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+		  let getItem = [];
+	
+		  for (let i = 0; i < cookies.length; i++) {		    
+		    if (cookies[i][0] === name) {
+		      getItem.push(cookies[i][1]);
+		      break;
+		    }
+		  }
+		  if (getItem.length > 0) {
+				console.log(getItem[0]);
+		    	return decodeURIComponent(getItem[0]);
+		  }		
+	}//end of header logout
+
+	var myLikeCheck; 
+   	var nickname;
+   	
+   	//좋아요 체크
+	window.onload = () =>{
+	   	
+	   	likeCnt = parseInt('[[${view.likeCnt}]]'); 
+	   	myLikeCheck = '[[${myLikeCheck}]]'; 
+	   	nickname = '[[${session.nickname}]]';
+	   	console.log("myLikeCheck is " + myLikeCheck);
+	   	
+	   	if(myLikeCheck == "") {
+	   		myLikeCheck = "N";
+	   	}
+	   	
+	   	if(myLikeCheck == "Y") {console.log("myLikeCheck is " + myLikeCheck);
+	   	document.querySelector("#likeButton").style.backgroundColor = "#8898CE";
+		   } else {console.log("myLikeCheck is " + myLikeCheck);
+			   
+		   }
+	   	
+	}
+   	
+	//좋아요 버튼 처리 함수
+	const likeClick = () => { 
+	    
+	   if (myLikeCheck == "N") { //버튼을 누르지 않은 상태에서 좋아요 => 좋아요
+	        myLikeCheck = "Y";
+	        likeCnt ++;
+			console.log("likeCnt", likeCnt);
+			console.log("myLikeCheck", myLikeCheck);
+			sendDataToServer(myLikeCheck,likeCnt);
+			
+			document.querySelector("#likeButton").style.backgroundColor = "#8898CE";
+			document.getElementById("likeCnt").innerHTML=likeCnt;
+			
+	    }else {
+			myLikeCheck = "N";
+			likeCnt --;
+			console.log("likeCnt", likeCnt);
+			sendDataToServer(myLikeCheck,likeCnt);
+			
+			document.querySelector("#likeButton").style.backgroundColor = "white";
+			document.getElementById("likeCnt").innerHTML=likeCnt;
+		}
+	}
+	
+
+	//서버에 보낼 좋아요 데이터
+	const sendDataToServer = async (myLike, likeCnt) => {
+	
+	    const myLikeCheck = myLike;
+	    //서버에 보낼 데이터는 글번호랑 좋아요 누른 유저의 아이디
+	    const queryString = {"seqno":parseInt('[[${view.seqno}]]'),"userid":'[[${session.userid}]]',
+	    		"mylikecheck":myLikeCheck};
+		
+		//***좋아요 함수 처리 이름 백엔드쪽이랑 말 맞출 것
+		await fetch('/freeboard/likeCheck', {
+			
+			method: 'POST',
+			headers: {
+				"content-type": "application/json"
+			},
+			body: JSON.stringify(queryString)			
+		}).then((response) => response.json())
+		  .then((data)=> {			
+			  //좋아요 눌러서 변하는 게 있으면 ...?  
+			  //like.innerHTML = data.likeCnt;
+       }).catch((error)=> {
+    	   console.log("error = " + error);
+       });	
+		
+	}
+	
+	
+	//게시글 삭제 버튼
+	const deleteBoard = () => {
+		if(confirm("정말로 삭제하시겠습니까?")){
+			const seqno = '[[${view.seqno}]]';
+			document.location.href="/freeboard/freeDelete?seqno=" + seqno;
+			
+		}	
+	}
+	
+	//댓글 처리
+	//댓글 등록
+	const replyRegister = async () => { //form 데이터 전송 --> 반드시 serialize()를 해야 한다.
+	
+		const replyContent = document.querySelector('#replyContent');
+		if(replyContent.value == '') {alert("댓글을 입력하세요."); replyContent.focus(); return false;}
+		
+		let formData = new FormData(replyForm);
+		
+		await fetch('/freeboard/reply?option=I', {
+			method: 'POST',
+			body: formData		
+		}).then((response) => response.json())
+		  .then((data) => replyList(data))
+		  .catch((error)=> {
+			  console.log("error = " + error);
+			  alert("시스템 장애로 댓글 등록이 실패했습니다.");
+		});
+		replyContent.value = '';
+	}
+
+	//댓글 목록 보기
+	const replyList = (data) => {
+		
+		var sessionUsername = '[[${session.nickname}]]';
+		const jsonInfo = data;
+		
+		let replyList = document.querySelector('#replyList');
+		replyList.innerHTML = '';
+		
+		var result = "";
+		for(const i in jsonInfo){
+			
+			let elm = document.createElement('div'); //<div></div>
+			elm.setAttribute("id", "s" + data[i].replySeqno); //<div id='s3'></div>
+			elm.setAttribute("style", "font-size: 0.8em"); //<div id='s3' style='font-size: 0.8em'></div>
+			
+			let result = "";
+			
+			result += "<img src='/images/avatar/" + jsonInfo[i].avatar + ".png' style='height: 100px;'>"
+			result += "작성자 : " + jsonInfo[i].replyWriter;
+							
+			//댓글 작성자와 현재 세션 유저가 같으면 수정/삭제 버튼이 노출되도록
+			if(jsonInfo[i].replyWriter == sessionUsername) {
+				result += "[<a href=" + "'javascript:replyModify(" + jsonInfo[i].replySeqno + ")' style='cursor:pointer;'>수정</a> | " ;
+				result += "<a href=" + "'javascript:replyDelete(" + jsonInfo[i].replySeqno + ")' style='cursor:pointer;'>삭제</a>]" ;
+			}
+			
+			result += "&nbsp;&nbsp;" + jsonInfo[i].replyRegdate
+			result += "<div style='width:90%; height: auto; border-top: 1px solid gray; overflow: auto;'>";
+			result += "<pre id='c" + jsonInfo[i].replySeqno + "'>" + jsonInfo[i].replyContent + "</pre></div>";
+			result += "<br>";
+			
+			elm.innerHTML = result;
+			replyList.appendChild(elm);
+			
+		}
+	}
+
+	//페이지 시작 시 댓글 목록 보기
+	const startupPage = async () => {
+		let formData = new FormData();
+		formData.append("seqno","[[${view.seqno}]]");
+		
+		await fetch('/freeboard/reply?option=L', {
+			method: 'POST',
+			body: formData	
+		}).then((response) => response.json())
+		  .then((data) => replyList(data))
+		  .catch((error)=> {
+			  console.log("error = " + error);
+			  alert("시스템 장애로 댓글 등록이 실패했습니다.");
+		});
+	}
+
+	//댓글 삭제
+	const replyDelete = async (replySeqno) => { 
+		
+		if(confirm("정말로 삭제하시겠습니까?") == true) {
+			
+			let formData = new FormData();
+			formData.append("replySeqno",replySeqno);
+			formData.append("seqno","[[${view.seqno}]]");
+			await fetch('/freeboard/reply?option=D',{
+				method: 'POST',
+				body: formData				
+			}).then((response) => response.json())
+			  .then((data) => replyList(data))
+			  .catch((error) => {
+				  console.log("error =" + error);
+				  alert("서버 장애로 댓글 삭제가 실패했습니다.");
+		   });
+		}
+	}
+
+	//댓글 수정
+	const replyModify = (replySeqno) => {
+
+		const modifyReplyContent = document.querySelector('#c' + replySeqno);
+		
+		var strReplyList = "작성자 : [[${session.nickname}]]&nbsp;"
+						+ "<input type='button' id='btn_replyModify' value='수정'>"
+						+ "<input type='button' id='btn_replyModifyCancel' value='취소'>"
+						+ "<input type='hidden' name='replySeqno' value='" + replySeqno + "'>"
+						+ "<input type='hidden' name='seqno' value='[[${view.seqno}]]'>"
+						+ "<input type='hidden' id='writer' name='replyWriter' value='[[${session.nickname}]]'>"
+						+ "<input type='hidden' id='userid' name='userid' value='[[${session.userid}]]'><br>"
+						+ "<textarea id='modify_replyContent' name='replyContent' cols='80' rows='5' maxlength='150' placeholder='글자수:150자 이내'>" + modifyReplyContent.innerHTML + "</textarea><br>";
+		
+		let elm = document.createElement('div');
+		elm.innerHTML = strReplyList;
+		
+		let parentDiv = document.querySelector('#s' + replySeqno).parentNode;
+		parentDiv.insertBefore(elm, document.querySelector('#s' + replySeqno));
+		document.querySelector('#s' + replySeqno).style.display = 'none';
+
+		const btnReplyModify = document.querySelector('#btn_replyModify');
+		const btnReplyModifyCancel = document.querySelector('#btn_replyModifyCancel');
+		
+		//댓글 수정 완료 버튼을 누르면..
+		btnReplyModify.addEventListener('click', async ()=> {
+
+			let formData = new FormData();
+			formData.append("replySeqno",replySeqno);
+			formData.append("replyContent",modify_replyContent.value);
+			
+			await fetch('/freeboard/reply?option=U',{
+				
+				method: 'POST',
+				body: formData
+			}).catch((error) => {
+				console.log("error = " + error);
+				alert("서버 장애로 댓글 수정이 실패했습니다.");
+			});
+			
+			document.querySelector('#replyList').innerHTML = '';
+			startupPage();				
+		});
+		
+		btnReplyModifyCancel.addEventListener('click',()=> {
+			if(confirm("정말로 취소하시겠습니까?") == true){
+				document.querySelector('#replyList').innerHTML = '';
+				startupPage();	
+			}
+		});
+		
+	}
+
+	//댓글 등록 취소
+	const replyCancel = () => { 
+		if(confirm("정말로 취소 하시겠습니까?") == true) { 
+			replyContent.value = ''; 
+			replyContent.focus(); 
+		}
+	}
+
+	
+</script>
+</head>
+
+<body>
+
+	
+
+	<!--header-->	
+	  
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+     			<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		<!-- if session.role = teacher -->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	  
+	<main>
+	<div class="board">
+		<div class="board_view">
+			<a href="/freeboard/freeList?page=1" class="toList_btn" >자유게시판 ></a>
+			<!-- 글 제목 -->
+			<div class="board_view_title">제목 : [[${view.title}]]</div>
+			<div class="board_view_header_container">
+				<!-- 글 작성자 아바타 -->
+				<img th:src="@{'/images/avatar/' + ${view.avatar} + '.png'}" style="width:10rem;">
+				<div class="board_view_writer_info">
+					<!-- 작성자 -->
+					<div style="text-align:left;">[[${view.writer}]]</div>
+					<!-- 글 작성 날짜 & 조회수 -->
+					<div style="text-align:left;">[[${#temporals.format(view.regdate,'yyyy-MM-dd HH:mm:ss')}]] &nbsp;&nbsp; 
+						<span th:if="${session.userid != view.userid}">조회수 [[${view.hitno} + 1]]</span>
+						<span th:if="${session.userid == view.userid}">조회수 [[${view.hitno}]]</span>
+					</div>
+				</div>
+			</div>
+			<!-- 글 내용 -->
+			<div class="board_view_content"><pre th:text="${view.content}"></pre></div>
+		</div>
+		<div class="board_view_btn_container">
+			<!-- 글쓰기 버튼 -->
+			<a href="/freeboard/freeWrite" class="board_view_btn">글쓰기</a>
+			<!-- 작성자만 보이는 글 삭제/수정 -->
+			<!-- "${session.userid == view.userid}" -->
+			<th:block th:if="${session.userid == viewId}">
+				<a th:href="@{'/freeboard/freeModify?seqno=' + ${view.seqno} + '&page=' + ${page} + '&keyword=' + ${keyword}}" class="board_view_btn">글 수정</a>
+				<a href="javascript:deleteBoard()" class="board_view_btn">글 삭제</a>
+			</th:block>
+		</div>
+		<div class="board_view_bottom_container">
+			<!-- 이전글 다음글 -->
+			<!-- 좋아요 -->
+			<th:block th:if="${pre_seqno != 0}">
+				<a th:href="@{'/freeboard/freeView?seqno=' + ${pre_seqno} + '&page=' + ${page} + '&keyword=' + ${keyword}}">&lt; 이전글</a>
+			</th:block>
+			
+			<div class="board_view_like_container" style=" margin-right:32.5rem;">
+				<!-- <input type="button" class=" board_view_like_btn" onclick="likeClick()" id="likeButton" value="♡" style="font-size:5rem; height:10rem;">-->
+				<button class="board_view_like_btn" onclick="likeClick()" id="likeButton" style="font-size:5rem; height:7rem;">♡</button>
+				좋아요 <span id="likeCnt">[[${view.likeCnt}]]</span>
+			</div>
+			
+			<th:block th:if="${next_seqno != 0}">
+				<a th:href="@{'/freeboard/freeView?seqno=' + ${next_seqno} + '&page=' + ${page} + '&keyword=' + ${keyword}}">다음글 &gt; </a>
+			</th:block>			
+		</div>
+		
+		<!-- 댓글 작성란 -->
+		<div class="board_view_replyDiv" >
+			<div class="board_view_reply_container">
+				<form id="replyForm" name="replyForm" method="POST"> 
+					<input type="hidden" id="replyWriter" name="replyWriter" th:value="${session.nickname}" readonly>
+					<textarea id='replyContent' class="board_view_replyContent" name='replyContent' maxlength='150' placeholder='글자수:150자 이내'></textarea>
+					<input type="hidden" id="seqno" name="seqno" th:value="${view.seqno}">
+					<input type="hidden" id="userid" name="userid" th:value="${session.userid}">
+					<input type="hidden" id="avatar" name="avatar" th:value="${session.avatar}">
+				</form>
+				<input type="button" id="btn_reply" value="등록"  class="board_view_btn_reply" onclick="replyRegister()">
+			</div>
+		
+		
+		
+		<!-- 댓글 목록 -->	
+		댓글
+			<div id="replyList" style="width:100%; height:600px; overflow:auto;"></div>		
+		</div>
+		
+	</div>
+
+
+	</main>
+	
+		
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>After School :: 강사 소개 페이지</title>
+    <link rel="stylesheet" th:href="@{/css/tabMenu.css}">
+	<link rel="stylesheet" th:href="@{/css/board.css}">
+    <link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+</head>
+<script>
+function logout() {
+	
+	if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+		
+		let authkey = getCookie('authkey');
+		if(authkey !== undefined)
+			document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+		document.location.href='/account/logout';
+	}
+}
+
+const getCookie = (name) => {
+	
+	const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+	  let getItem = [];
+
+	  for (let i = 0; i < cookies.length; i++) {		    
+	    if (cookies[i][0] === name) {
+	      getItem.push(cookies[i][1]);
+	      break;
+	    }
+	  }
+	  if (getItem.length > 0) {
+			console.log(getItem[0]);
+	    	return decodeURIComponent(getItem[0]);
+	  }		
+}
+</script>
+
+<body>
+
+
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+     			<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		<!-- if session.role = teacher -->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	  
+
+	<main class="main">
+		<div style="grid-column:2/3;">
+	    
+	        <!-- 목 록 -->
+	        <div class="classInfo_backbtn"><a href="/search/teacherList">목록으로 돌아가기 ></a>
+	    	</div>
+	
+	        <div class="class-details">
+	            <!-- teacher 사진 -->
+	            <div class="class_imgView"><img th:src="@{'/profile/' + ${teacher.storedProfilename}}"></div>
+	            
+	            <div class="class_details_content">
+	            	<div class="class_details_header">
+			            <!-- teacher 이름 -->
+			            <div><h1>[[${teacher.username}]] 선생님</h1></div> 
+					</div>
+					
+			            <!-- teacher 간략한 소개 -->
+			            <div class="class_details_className">[[${teacher.introduceLine}]]</div>
+			
+			            <!-- teacher 상세 소개 정보 -->
+			            <div><div th:text="${teacher.introduce}" style="resize:none; font-size:2.5rem; border:1px solid #dbdbdb; padding:3rem; border-radius:3rem;"></div></div> 
+			            <br>
+			
+			            <!-- 채팅하기 -->
+			            <!-- <button><a href="#">채팅하기</a></button> -->
+	            	
+	            </div>
+	        </div>
+	
+	        <!-- 강사 강좌 목록 -->
+	        <div class="tab-wrapper">
+	        <div class="tab-item_classInfo">
+	        	<input type="radio" id="tab1" name="tabGroup" checked>
+	            <label for="tab1" class="tab-label_classInfo">강좌 목록</label>
+		        <div class="tab-content_classInfo">
+			        <table class="board_list">
+						
+			            <tr class="list_header_classInfo">
+			                <th>카테고리</th>
+							<th>강좌</th>
+							<th>별점</th>
+						</tr>
+			
+			            <tbody>
+			                <th:block th:if="${classlist != null}">
+			                    <tr th:each="classlist : ${classlist}" class="list_body">
+			                        <!-- 카테고리 -->
+			                        <td th:switch="${classlist.category}">
+									    <span th:case="A">수학</span>
+									    <span th:case="B">영어</span>
+									    <span th:case="C">코딩</span>
+									    <span th:case="D">미술/공예</span>
+									</td>
+						            <br>
+			
+			                        <!-- class 제목 -->
+			                        <td><a id="hypertext" th:href="@{'/search/classInfo?classCode=' + ${classlist.classCode} }"
+			                            ><span th:text="${classlist.className}"></span></a></td>
+			                            
+			
+			                        <!-- 평균 별점 -->
+			                        <td th:text="${classlist.avgRate}"></td>
+			                    </tr>						
+			                </th:block>
+			            </tbody>
+			
+					</table>
+				</div>
+			</div>
+			<br>
+			
+	        <!-- 페이징 -->
+	        <div>[(${pageList})]</div>
+			<br>
+	    </div>
+	</main>
+    
+    <footer>
+	    <p>footer</p>
+	    <small>Go back to link<a href="/link">Click</a></small>
+  	</footer>
+</body>
+</html>

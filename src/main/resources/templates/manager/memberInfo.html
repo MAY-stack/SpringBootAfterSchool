@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 관리자 페이지</title>
+<link th:href="@{/headerAndFooter/header.css}" rel="stylesheet" />
+
+<script>
+
+
+	async function memberDelete(t) {
+		var memberID = t.id;
+		console.log("deleted member's userid : " + memberID);
+		
+		if(confirm("해당 회원(아이디:" + memberID + ")을 강제로 탈퇴시키겠습니까?")) {
+			
+			await fetch('/manager/memberInfo',{		
+				method: "POST",
+				body: memberID,		
+			}).then((response) => response.json())
+			  .then((data) => {	
+				  if(data.message == 'good'){
+					console.log("***member deleted***");
+					location.reload();					  
+				  }
+			  });
+		}
+	}
+	
+	//header에 있는 로그아웃 기능
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+
+		const getCookie = (name) => {
+			
+			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+			  let getItem = [];
+		
+			  for (let i = 0; i < cookies.length; i++) {		    
+			    if (cookies[i][0] === name) {
+			      getItem.push(cookies[i][1]);
+			      break;
+			    }
+			  }
+			  if (getItem.length > 0) {
+					console.log(getItem[0]);
+			    	return decodeURIComponent(getItem[0]);
+			  }		
+		}//end of header logout
+</script>
+</head>
+<body>
+
+
+	<!--header-->	
+	  <div class="svg-container">
+	    <svg viewbox="0 0 800 300" class="svg">
+	      <path id="curve" fill="#BDC3E5" d="M 800 200 Q 400 250 0 200 L 0 0 L 800 0 L 800 200 Z">
+	      </path>
+	    </svg>
+	  </div>
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+	  </header>
+	  <!--end of header-->
+
+		
+		<br><br>
+		
+		<main>
+		
+		<!-- 승인 요청 목록 -->
+		<table class="">
+			<tr>
+				<th>회원가입일</th>
+				<th>ROLE</th>		
+				<th>ID</th>
+				<th>이름</th>
+				<th>생년월일</th>
+				<th>성별</th>
+				<th>이메일</th>
+				<th>강제탈퇴</th>
+			</tr>
+			
+			 
+			<tbody>
+			<th:block th:if="${member != null}">
+				<tr th:each="member: ${member}"  onmouseover="this.style.background='#46D2D2'" onmouseout="this.style.background='white'">
+					<td th:text="${#temporals.format(member.signupDate,'yyyy-MM-dd HH:mm:ss')}"></td>
+					<td th:text="${member.role}"></td>
+					<td th:text="${member.userid}"></td>
+					<td th:text="${member.username}"></td>		
+					<td th:text="${member.birthdate}"></td>
+					<td th:text="${member.gender}"></td>
+					<td th:text="${member.email}"></td>
+					<td><input type="button" value="강제탈퇴" th:id="${member.userid}" onclick="memberDelete(this)"></td>
+				</tr>	
+			</th:block>
+			<th:block th:if="${member == null}">
+				<tr>
+					<td colspan="5">회원이 없습니다.</td>
+				</tr>
+			</th:block>	
+			</tbody>	
+		</table>
+		
+		
+		</main>
+		    	
+	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+
+</body>
+</html>

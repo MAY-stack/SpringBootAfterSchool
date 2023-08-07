@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+    <title>After School :: 강좌 상세보기</title>
+	<link rel="stylesheet" th:href="@{/css/tabMenu.css}">
+	<link rel="stylesheet" th:href="@{/css/board.css}">
+    <link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+    <script>
+    	
+		 var wishCheck;
+		 var classCode = '[[${class.classCode}]]'
+		    
+		    window.onload = () => {
+		    	//if 수강신청이 되어있으면
+		    	var registerCheck = '[[${registerCheck}]]';
+		    	if (registerCheck == 1) {
+		    		document.getElementById("enrollCourse").value="내 강의실 바로 가기";
+		    	}
+		    	
+		    	// 찜하기 onload
+		    	wishCheck = '[[${wishCheck}]]';
+		    	
+		    	if(wishCheck == "Y") {
+		    		document.querySelector(".likeCheck").classList.add("likeChecked");
+		    	} 
+		    	/*else if(wishCheck == "N") {
+		    		document.querySelector(".likeCheck").style.backgroundColor = "#8898CE";
+		    	}*/
+		    	
+		    	var avgRate = '[[${class.avgRate}]]'
+		    	var avgPercent = avgRate*20;
+		    	document.querySelector("#starBar").style.width=avgPercent+"%";
+		    	
+		    }
+		    
+			 // 찜하기 버튼 동작
+			    const likeCheckView = () => {
+			    	
+
+			    	if ('[[${session.role}]]' === 'TEACHER' || '[[${session.role}]]' === 'MANAGER') {
+			    	    alert("학생만 찜하기가 가능합니다.");
+			    	    return false;
+			    	}
+
+			    	if('[[${session.userid}]]' === '' || '[[${session.userid}]]' === null) {
+						
+						if(confirm("로그인 이후 이용할 수 있는 서비스입니다. 로그인하시겠습니까?")){
+							document.location.href="/account/login";
+						} else {
+							return false;
+						}
+					} else if ('[[${session.userid}]]' !== '' || '[[${session.userid}]]' !== null) {
+
+				    	if(wishCheck == "N") {
+				    		alert("강좌를 찜합니다.");
+				    		wishCheck = "Y";
+				    		console.log("wishCheck is " + wishCheck);
+				    		sendDataToServer(wishCheck);
+				    		document.querySelector(".likeCheck").classList.add("likeChecked");
+				    	} 
+				    	
+				    	else if(wishCheck == "Y") {
+				    		alert("찜을 취소합니다.");
+				    		wishCheck = "N"
+				    		console.log("wishCheck is " + wishCheck);
+				    		sendDataToServer(wishCheck);
+				    		document.querySelector(".likeCheck").classList.remove("likeChecked");
+				    	}
+					}
+
+
+			    	
+			    }
+	    
+			//공지게시판
+			const noticeBoard = () => {
+
+				if ('[[${session.userid}]]' === '' || '[[${session.userid}]]' === null) {
+
+					if (confirm("로그인 이후 이용할 수 있는 서비스입니다. 로그인하시겠습니까?")) {
+						document.location.href = "/account/login";
+					} else {
+						document.getElementById("tab1").checked = true;
+						return false;
+					}
+				} else if ('[[${session.userid}]]' !== '' || '[[${session.userid}]]' !== null) {
+					alert("공지게시판으로 이동합니다");
+					document.location.href = "/noticeboard/noticeList?classCode=" + classCode + "&page=1"
+				}
+			}
+
+			//수강신청
+			const enrollCourse = async () => {
+				
+				if (document.getElementById("enrollCourse").value == "내 강의실 바로 가기") {
+					document.location.href = "/student/myClass?userid=" + '[[${session.userid}]]';
+				} else {
+			
+					if('[[${session.userid}]]' === '' || '[[${session.userid}]]' === null) {
+						
+						if(confirm("로그인 이후 이용할 수 있는 서비스입니다. 로그인하시겠습니까?")){
+							document.location.href="/account/login";
+						} else {
+							return false;
+						}
+						
+					} 
+					
+					
+
+					if ('[[${session.role}]]' === 'TEACHER' || '[[${session.role}]]' === 'MANAGER') {
+					    alert("학생만 수강 신청 가능합니다.");
+					    return false;
+					} else if ('[[${session.role}]]' === 'STUDENT'){
+						
+						
+						await fetch("/student/registerClass", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json"
+							},
+							body: JSON.stringify({
+								"classCode": '[[${class.classCode}]]',
+								"className": '[[${class.className}]]'
+							}),
+						}).then((response) => response.json())
+							.then((data) => {
+								if (data.msg == "good") {
+									//const btnEnrollCourse = document.getElementById('enrollCourse');
+									//btnEnrollCourse.disabled = true;
+									if (confirm("수강신청이 되었습니다! 내 강의실로 이동하시겠습니까?")){
+										document.location.href = "/student/myClass?userid=" + '[[${session.userid}]]';
+									} else { 
+										document.getElementById("enrollCourse").value="내 강의실 바로 가기";
+										return false;
+									}
+									
+								}
+							}).catch((error) => {
+								alert("서버 오류로 수강신청에 실패하였습니다. 잠시 후 다시 시도해주시기 바랍니다.1111");
+								console.log("error = " + error);
+							})
+						
+					}
+					
+
+					
+				}
+			}
+			
+		
+		
+		// 찜하기 서버로 데이터 보내기
+		const sendDataToServer = async (wish) => {
+			const wishCheck = wish;
+			
+			const list = {"classCode":'[[${class.classCode}]]', "wishCheck":wishCheck, "className": '[[${class.className}]]'};
+				console.log(list);
+			await fetch('/student/wishClass',{
+				  method: "POST",
+				  headers: {
+				    "Content-Type": "application/json",
+				  },
+				  body: JSON.stringify(list)				
+				}).then((response)=> response.json())
+					/*.then((data) => {
+						if(data.msg == 'good'){
+							const btnLike = document.getElementById('btn_like');
+							btnLike.style.border = 'solid, red';
+							btnLike.style.background = 'red';
+							btnLike.style.color = 'white';
+							
+						} else {
+							const btnLike = document.getElementById('btn_like');
+							btnLike.style.border = 'solid, #168';
+							btnLike.style.background = 'white';
+							btnLike.style.color = 'black';	
+						}
+				})*/
+				.catch((error)=> {				
+					console.log("error = " + error);
+				});	
+		}
+		
+		
+
+		//header에 있는 로그아웃 기능
+		function logout() {
+		
+			if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+				
+				let authkey = getCookie('authkey');
+				if(authkey !== undefined)
+					document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+				document.location.href='/account/logout';
+			}
+		}
+
+		const getCookie = (name) => {
+			
+			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+			  let getItem = [];
+		
+			  for (let i = 0; i < cookies.length; i++) {		    
+			    if (cookies[i][0] === name) {
+			      getItem.push(cookies[i][1]);
+			      break;
+			    }
+			  }
+			  if (getItem.length > 0) {
+					console.log(getItem[0]);
+			    	return decodeURIComponent(getItem[0]);
+			  }		
+		}//end of header logout
+    </script>
+</head>
+<body >
+
+	<!-- 찜하기, 수강 정보 -->
+	<!-- <input type="hidden" th:value="${wishCheck}"> -->
+	
+	<!--header-->	
+	<header>
+	  	<a href="/main" style="text-decoration: none; text-align: left;">
+		    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	   	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  	<div class="container cut">
+			    	<div class="drop cut2"></div>
+			  	</div>
+				<div class="list">
+					<ul>
+						<!--if role == student -->
+						<div th:if="${session.role == 'STUDENT'}">
+							<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+								<li>내 강의실</li>
+					      	</a>
+				      	</div>
+				      	
+				      	<!--if role == teacher -->
+						<div th:if="${session.role == 'TEACHER'}">
+							<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+								<li>내 강좌 목록</li>
+					      	</a>
+				      	</div>
+				      	
+				      	<!--if role == manager -->
+						<div th:if="${session.role == 'MANAGER'}">
+							<a href="/manager/memberInfo" style="text-decoration: none;">
+								<li>관리자 페이지</li>
+					      	</a>
+				      	</div>
+				  		
+				  		<a href="javascript:logout()" style="text-decoration: none;">
+				    		<li style="margin-top:50px;">로그아웃</li>
+				   		</a>
+					</ul>
+				</div>
+				<div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+			
+				<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		
+	     		<!-- if session.role = teacher :: 이건 선생님 프로필 사진 파일 경로 정해지면 추가-->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+	     		
+     		</div>
+     	</div>
+	</header>
+	<!--end of header-->
+
+	<main class="main">
+		<div style="grid-column:2/3; width:90%;">
+		
+		<!-- 목 록 -->
+	    <div class="classInfo_backbtn"><a href="/search/classList">목록으로 돌아가기 ></a></div>
+	
+	
+	    <div class="class-details">
+	    	<!-- class 대표 이미지 -->
+	        <div class="class_imgView"><img th:src="@{'/classImage/' + ${class.storedClassProfilename}}"></div>
+	        <div class="class_details_content">
+		        <div class="class_details_header">
+			        <!-- 카테고리 -->
+			        <div th:switch="${class.category}" class="classItem_category">
+					    <span th:case="A">수학</span>
+					    <span th:case="B">영어</span>
+					    <span th:case="C">코딩</span>
+					    <span th:case="D">미술/공예</span>
+					</div>
+					<div class="star_bar"><span id="starBar"></span><div class="star_mask"></div></div><span th:text="${class.avgRate}"></span>
+		        </div>
+	        
+		        <!-- class 제목 -->
+		        <div class="class_details_className" style="font-size:5rem; font-weight:bold;">[[${class.className}]]</div> 
+	        
+		        <!-- teacher 이름 -->
+		        <div class="class_details_teacherInfo">
+		        	<a th:href="@{'/search/teacherInfo?userid=' + ${class.userid}}">[[${class.username}]]</a> 선생님
+		        </div> 
+		        <div class="class_details_btns">
+					<input type="button" id="enrollCourse" class="enrollCourse" value="수강신청" onclick="enrollCourse()" style="line-height:1rem;">
+					
+					<div onclick="javascript:likeCheckView()" id="likeCheck" class="likeCheck"><span>♥</span>찜하기</div>
+		        </div>
+			
+	    	</div>
+	    </div>
+	
+	    <!--탭 하여 메뉴 이동 -->
+	    <div class="tab-wrapper">
+	        
+	        <!-- 강좌(class) 소개 -->
+	        <div class="tab-item_classInfo">
+	            <input type="radio" id="tab1" name="tabGroup">
+	            <label for="tab1" class="tab-label_classInfo">강좌 소개</label>
+	            <div class="tab-content_classInfo">
+	                <textarea cols="50" rows="5" name="description" th:text="${class.classDescription}" disabled style="resize:none; border:none; font-size:3rem; padding:3rem;"></textarea>
+	            </div>
+	        </div>
+	        
+	        <!-- 강의(lecture) 목록 -->
+	        <div class="tab-item_classInfo">
+	            <input type="radio" id="tab2" name="tabGroup" checked>
+	            <label for="tab2" class="tab-label_classInfo">강의 목록</label>
+	            <div class="tab-content_classInfo"  style="overflow:hidden;">
+	            	<div class="classInfo_lectureCount">총 [[${class.lectureCount}]]강의 강의가 있습니다.</div>
+	                <table class="board_list" style="width:80%; margin-left:10%;">
+	                    <tr class="list_header_classInfo">
+	                        <th>번호</th>
+	                        <th>강의 제목</th>
+	                    </tr>
+	
+	                    <tbody>
+	                        <th:block th:if="${lecturelist != null}">
+	                            <tr th:each="lecturelist : ${lecturelist}"  class="list_body">
+	                                <td th:text="${#strings.substring(lecturelist.lectureSeqno,6) + '강'}"></td>
+	                                <td th:text="${lecturelist.lectureTitle}"></td>
+	                            </tr>
+	                        </th:block>
+	                    </tbody>
+	
+	                </table>
+	            </div>
+	        </div>
+	
+	        <!-- 리뷰 -->
+	        <div class="tab-item_classInfo">
+	            <input type="radio" id="tab3" name="tabGroup">
+	            <label for="tab3" class="tab-label_classInfo">리뷰 보기</label>
+	            <div class="tab-content_classInfo">
+					
+	                <th:block th:if="${list != null}">
+	                    <tr th:each="list : ${list}">
+	                    
+	                    	<div class="me-courses__cont">
+								<div class="me-courses__header">
+									<span th:text="${list.rate}" style="font-size:larger;"></span>&nbsp;
+	                        		<a class="me-courses__title"><span th:text="${list.reviewWriter}"></span></a>
+	                        		&nbsp;&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;
+	                        		<div th:text="${list.reviewContent}"></div>
+	                        </div>
+						</div>
+	                    </tr>
+	                    
+	                </th:block>
+	                
+	                    
+	            </div>
+	        </div>
+	
+	        <div class="tab-item_classInfo">
+				<input type="radio" id="tab4" name="tabGroup" onclick="noticeBoard()">
+
+				<label for="tab4" class="tab-label_classInfo">공지게시판</label>
+			</div>
+	        
+	    </div>
+	    </div>
+	</main>
+    
+    <footer>
+	    <p>footer</p>
+	    <small>Go back to link<a href="/link">Click</a></small>
+  	</footer>
+</body>
+</html>

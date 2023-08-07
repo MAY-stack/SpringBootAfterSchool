@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 내 강의실</title>
+<link th:href="@{/css/ratingModal.css}" rel="stylesheet" />
+<link th:href="@{/css/AfterSchool.css}" rel="stylesheet" />
+<link th:href="@{/css/tabMenu.css}" rel="stylesheet" />
+
+<script>
+	/*
+	//click tab value
+	async function clickTab(t) {
+		var tabValue = t.value;
+		var tabID = "tab" + tabValue;
+		console.log("value is " + tabValue);
+		console.log("ID is " + tabID);
+		
+		await fetch('/student/myClass', {
+		  	method: "POST",
+		  	body: tabValue,
+		}).then((response) => response.json())
+		  .then((data) => {
+			  document.getElementById(tabID).checked = true;
+		  });
+	}*/
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+
+	const getCookie = (name) => {
+		
+		const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+		  let getItem = [];
+	
+		  for (let i = 0; i < cookies.length; i++) {		    
+		    if (cookies[i][0] === name) {
+		      getItem.push(cookies[i][1]);
+		      break;
+		    }
+		  }
+		  if (getItem.length > 0) {
+				console.log(getItem[0]);
+		    	return decodeURIComponent(getItem[0]);
+		  }		
+	}
+</script>
+
+</head>
+<body>
+	
+	
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>관리자 페이지</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+			<!-- if session.role = student -->
+			<div th:if="${session.role == 'STUDENT'}">
+     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+     		</div>
+     		<!-- if session.role = teacher :: 이건 선생님 프로필 사진 파일 경로 정해지면 추가-->
+     		<div th:if="${session.role == 'TEACHER'}">
+     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	
+	
+    <main class="main">
+		
+        <div class="side-section__container" style="width:100%">
+                <div class="side-section__flex">
+
+                    <!-- sidebar menu -->
+                    <div class="side-sidebar__menu">
+                        <nav class="side-sidebar__nav">
+							
+						<!-- avatar -->
+                        <img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px; border-radius:50%;">
+
+                           <h3 class="side-sidebar"><span>[[${session.username}]]</span> 님</h3> 
+                            <ul class="side-sidebar__nav__list">
+                                <li>
+                                    <a th:href="@{'/student/myClass?userid=' + ${session.userid}}" class="side-sidebar__nav__menu currentPage">내 강의실</a>
+                                </li>
+                                <li>
+                                    <a th:href="@{'/student/myInfoModify?userid=' + ${session.userid}}" class="side-sidebar__nav__menu">회원 정보 수정</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:logout()" class="side-sidebar__nav__menu">로그아웃</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+                    <!-- my section -->
+                    <section class="me-section">
+                        <div class="mypage__header">
+                            <h2 class="title">내 강의실</h2> 
+                        </div>
+
+                        <!-- bar -->
+		                        
+		                        <div class="me-panel">
+		                            <div class="me-panel__cell">
+		                                <div class="tab-wrapper">
+		                                    <!-- 수강중 -->
+		                                    <div class="tab-item">
+		                                        <input type="radio" name="tabGroup" id="tab1" value="1" checked>
+		                                        <label for="tab1" class="tab-label">수강중</label>
+		                                        <div class="tab-content">
+		                                                <!-- my courses -->
+							                            <section class="me-courses">
+															<th:block th:if="${list1 != '[]'}">
+															<tr th:each="list1 : ${list1}">
+																<td>									                                
+								                                    <div class="me-courses__item">
+								                                        <div class="me-courses__cont">
+																			<div class="me-courses__header">
+																			<!-- class status -->
+																			<span>수강중</span>
+																			
+																			<!-- class name -->
+																			<a th:href="@{'/search/classInfo?classCode=' + ${list1.classCode}}" class="me-courses__title"><span th:text="${list1.className}"></span></a>
+																			
+																			<!-- go to class notice board -->
+																			<a th:href="@{'/noticeboard/noticeList?classCode=' + ${list1.classCode} + '&page=1'}" class="me-courses__noticeboard">해당 강좌 공지게시판 바로가기 &gt;</a>
+																			</div>
+																			
+
+																			<div class="me-courses__percentContainer">
+																			<!-- class percentage -->
+																			<div class="me-courses__percent"><div class="me-courses__percentbar" th:style="@{'width:'+${list1.percent}+
+																			'%'}"></div></div>
+																			<span th:text="${list1.percent}"></span>%
+																			
+																			</div>
+																			<div class="me-courses__bottom">
+																			
+																			<!-- class regdate -->
+																			<span th:text="${#temporals.format(list1.regdate,'yyyy/MM/dd')}"></span>&nbsp;~ 수강중
+																	
+
+																			<!-- link to class player -->
+																			<a th:href="@{'/student/classPlayer?userid=' + ${session.userid} + '&classCode=' + ${list1.classCode}}+'&lectureSeqno='+${list1.lectureSeqno}" onclick="window.open(this.href, '_blank','width=800, height=600'); return false;" class="me-courses__classPlayer">▶강의 이어듣기</a>
+								                                            </div>
+								                                        </div>
+								                                    </div>
+							                                	</td>
+															</tr>
+															</th:block>
+							                            </section>
+							                            </div>
+		                                    </div>
+		                                    
+		                                    
+		                                    <!-- 수강 완료 -->
+		                                    <div class="tab-item">
+		                                        <input type="radio" name="tabGroup" id="tab2" value="2">
+		                                        <label for="tab2" class="tab-label">수강 완료</label>
+		                                        <div class="tab-content">		                                        
+		                                                <!-- my courses -->
+							                            <section class="me-courses">
+							                            
+							                       
+															<th:block th:if="${list2 != null}">
+															<tr th:each="list2 : ${list2}">
+																<td>
+
+									                                    <div class="me-courses__item">
+									                                        <div class="me-courses__cont">
+																				<div class="me-courses__header">
+																				<!-- class status -->
+																				<span>수강 완료</span>
+
+																				<!-- class name -->
+																				<a th:href="@{'/search/classInfo?classCode=' + ${list2.classCode}}" class="me-courses__title"><span th:text="${list2.className}"></span></a>
+																				
+																				<!-- go to class notice board -->
+																				<a th:href="@{'/noticeboard/noticeList?classCode=' + ${list2.classCode} + '&page=1'}" class="me-courses__noticeboard">해당 강좌 공지게시판 바로가기 &gt;</a>
+																				</div>
+																				<div class="me-courses__reviewContainer">																				
+																					<!-- rating -->
+																					<!-- if rating info exist -->
+																					<div th:if="${list2.reviewCheck == 'Y'}"> 평가완료
+																					
+																					</div>
+																						<!-- show rating information -->
+																					<!-- if rating info don't exist -->
+																					<div th:if="${list2.reviewCheck == 'N'}">					
+																						<input type="button" th:id="${list2.classCode}" aria-label="add review" title="Add Review" value="리뷰 작성하기" onclick="openModal(this)" class="me-courses__review_btn">
+																						<div id="modal" role="dialog" aria-modal="true" aria-labelledby="add-review-header" class="">
+																						  <button class="close-btn" aria-label="close" title="Close">x</button>
+																						  <div id="review-form-container">
+																						    <h2 id="add-review-header">리뷰창</h2>
+																						
+																						    <form id="ReviewForm">
+																						      <div class="fieldset">
+																						        <label for="reviewName">수강자: </label>
+																						        <span>[[${session.username}]]</span>
+																						      </div>
+																						      <div class="fieldset">
+																						        <label>평가하기</label>
+																						        <div class="rate">
+																						          <input type="radio" id="star5" name="rate" value="5" onkeydown="navRadioGroup(event)" onfocus="setFocus(event)">
+																						          <label for="star5" title="5 stars">5 stars</label>
+																						          <input type="radio" id="star4" name="rate" value="4" onkeydown="navRadioGroup(event)">
+																						          <label for="star4" title="4 stars">4 stars</label>
+																						          <input type="radio" id="star3" name="rate" value="3" onkeydown="navRadioGroup(event)">
+																						          <label for="star3" title="3 stars">3 stars</label>
+																						          <input type="radio" id="star2" name="rate" value="2" onkeydown="navRadioGroup(event)">
+																						          <label for="star2" title="2 stars">2 stars</label>
+																						          <input type="radio" id="star1" name="rate" value="1" onkeydown="navRadioGroup(event)">
+																						          <label for="star1" title="1 star">1 star</label>
+																						        </div>
+																						      </div>
+																						
+																						      <div class="fieldset">
+																						        <label for="reviewContent">후기</label>
+																						        <textarea name="reviewContent" id="reviewContent" cols="20" rows="5" style="resize:none;"></textarea>
+																						      </div>
+																						      <div class="fieldset right">
+																						        <input type="button" id="submit-review-btn" onclick="submitAddReview()" value="리뷰 등록하기">
+																						      </div>
+																						      	<input type="hidden" id="userid" name="userid" th:value="${session.userid}">
+																						      	<input type="hidden" id="reviewWriter" name="reviewWriter" th:value="${session.nickname}">
+																						    </form>
+																						    
+																						  </div>
+																						</div>
+																						<div class="modal-overlay"></div>
+																					</div>
+																				</div>
+																				<div class="me-courses__bottom">
+																				<!-- class regdate -->
+																				<span th:text="${#temporals.format(list2.regdate,'yyyy-MM-dd')}"></span> ~ <span th:text="${#temporals.format(list2.finishDate,'yyyy-MM-dd')}"></span>
+																			
+																				<!-- link to class player -->
+																				<a th:href="@{'/student/classPlayer?userid=' + ${session.userid} + '&classCode=' + ${list2.classCode}}+'&lectureSeqno='+${list2.lectureSeqno}" onclick="window.open(this.href, '_blank','width=1600, height=870'); return false;" class="me-courses__classPlayer">▶강의 다시듣기</a>
+																				</div>
+									                                            
+									                                       
+									                                    </div> <!-- me course content -->
+									                                </div> <!-- me course item -->
+							                                
+							                                
+							                                	</td>
+															</tr>
+															</th:block>
+							                            </section>
+							                            </div> <!-- tab content -->
+		                                    </div> <!-- tab item -->
+		                                    
+		                                    
+		                                    <!-- 찜하기 -->
+		                                    <div class="tab-item">
+		                                        <input type="radio" name="tabGroup" id="tab3" value="3">
+		                                        <label for="tab3" class="tab-label">찜하기</label>
+		                                        <div class="tab-content">
+	                                                <!-- my courses -->
+						                            <section class="me-courses">
+							                            													
+														<th:block th:if="${wishlist != null}">
+															<div th:each="wishlist : ${wishlist}">
+								                                
+								                                    <div class="me-courses__item">
+								                                        <div class="me-courses__cont">
+																			<div class="me-courses__header">
+																			<!-- class status -->
+																			<span>찜하기</span>
+																			
+																			<!-- class name -->
+																			<a th:href="@{'/search/classInfo?classCode=' + ${wishlist.classCode}}" ><span th:text="${wishlist.className}"></span></a>
+																			</div>																		
+								                                        </div>
+								                                    </div>
+							                                    
+															</div>
+														</th:block>							
+						                            </section>		   
+						                            </div>      
+		                                    </div>
+                                      
+		                                    <!-- 내 리뷰 보기 -->
+		                                    <div class="tab-item">
+		                                        <input type="radio" name="tabGroup" id="tab4" value="4">
+		                                        <label for="tab4" class="tab-label">내 리뷰</label>
+		                                        <div class="tab-content">
+	                                                <!-- my courses -->
+						                            <section class="me-courses">	
+														<th:block th:if="${review != null}">															
+															<tr th:each="review : ${review}">
+																<td>
+									                                
+									                                    <div class="me-courses__item">
+									                                        <div class="me-courses__cont">																			
+																				<div class="me-courses__header">
+																				<!-- class name -->
+																				<a th:href="@{'/search/classInfo?classCode=' + ${review.classCode}}" >강좌명: <span th:text="${review.className}"></span></a>
+																				</div>
+																				평가 점수: [[${review.rate}]] <br>
+																				평가 내용: [[${review.reviewContent}]]																		
+									                                        </div>
+									                                    </div>
+									                                
+							                                	</td>
+															</tr>
+														</th:block>
+							
+						                            </section>	
+						                            </div>	         
+		                                    </div>
+		                                </div><!-- end of tab-wrapper -->
+		                                
+		                                
+		                            </div>
+		
+		
+		                        </div>
+		                    </section>
+
+    </main>
+    
+
+    	
+	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+    
+</body>
+
+											<script>
+											 
+											    
+													let focusedElementBeforeModal;
+													const modal = document.getElementById('modal');
+													const modalOverlay = document.querySelector('.modal-overlay');
+													/*
+													window.onload = () => {
+													  const addReview = document.getElementById('review-add-btn');
+													  //addReview.id = 'review-add-btn';
+													  //addReview.innerHTML = '리뷰 작성';
+													  //addReview.setAttribute('aria-label', 'add review');
+													  //addReview.title = 'Add Review';
+													  addReview.addEventListener('click', openModal);
+													  //addReview.click();
+													} */
+													
+													//var thisClassCode = "";
+													
+													const openModal = (t) => {
+													
+														globalThis.thisClassCode = t.id;
+														//alert("class code is " + thisClassCode);
+														
+													  focusedElementBeforeModal = document.activeElement;
+													  modal.addEventListener('keydown', trapTabKey);
+													
+													  modalOverlay.addEventListener('click', closeModal);
+													  // Close btn
+													  const closeBtn = document.querySelector('.close-btn');
+													  closeBtn.addEventListener('click', closeModal);
+													
+													  // submit form
+													  //const form = document.getElementById('ReviewForm');
+													  //form.addEventListener('submit', submitAddReview, false);
+													
+													  // Find all focusable children
+													  var focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+													  var focusableElements = modal.querySelectorAll(focusableElementsString);
+													  // Convert NodeList to Array
+													  focusableElements = Array.prototype.slice.call(focusableElements);
+													
+													  var firstTabStop = focusableElements[0];
+													  var lastTabStop = focusableElements[focusableElements.length - 1];
+													
+													  // Show the modal and overlay
+													  modal.classList.add('show');
+													  modalOverlay.classList.add('show');
+													
+													  // Focus first child
+													  // firstTabStop.focus();
+													  const reviewName = document.getElementById('reviewName');
+													  reviewName.focus();
+													
+													  function trapTabKey(e) {
+													    // Check for TAB key press
+													    if (e.keyCode === 9) {
+													
+													      // SHIFT + TAB
+													      if (e.shiftKey) {
+													        if (document.activeElement === firstTabStop) {
+													          e.preventDefault();
+													          lastTabStop.focus();
+													        }
+													
+													      // TAB
+													      } else {
+													        if (document.activeElement === lastTabStop) {
+													          e.preventDefault();
+													          firstTabStop.focus();
+													        }
+													      }
+													    }
+													
+													    // ESCAPE
+													    if (e.keyCode === 27) {
+													      closeModal();
+													    }
+													  }
+													};
+													
+													const submitAddReview = async() => {
+														//alert("class code is " + thisClassCode);
+														
+													  if(reviewContent.value == '') { alert("후기를 입력하세요"); reviewContent.focus(); return false;  }
+													  
+													  let wForm = document.getElementById('ReviewForm');
+													 	let formData = new FormData(wForm);
+													 	formData.append("classCode", thisClassCode);
+														
+														await fetch("/student/classReview", {			
+															method: 'POST',
+															body: formData			
+															
+														}).then((response)=> response.json())
+														  .then((data) => {
+															  console.log("data msg is " + data.msg);
+															  if(data.msg == "good"){
+																alert("별점이 등록되었습니다!");
+															  }	
+														}).catch((error)=> { 
+															alert("시스템 장애로 별점 등록이 실패했습니다");
+															console.log((error)=> console.log("error = " + error))
+														});
+													  
+													  console.log('리뷰등록 완료!');
+													  
+													  closeModal();
+													  window.location.reload();
+																								  
+													};
+													
+													const closeModal = () => {
+													  // Hide the modal and overlay
+													  modal.classList.remove('show');
+													  modalOverlay.classList.remove('show');
+													
+													  const form = document.getElementById('ReviewForm');
+													  form.reset();
+													  // Set focus back to element that had it before the modal was opened
+													  focusedElementBeforeModal.focus();
+													};
+													
+													const setFocus = (evt) => {
+													  const rateRadios = document.getElementsByName('rate');
+													  const rateRadiosArr = Array.from(rateRadios);
+													  const anyChecked = rateRadiosArr.some(radio => { return radio.checked === true; });
+													  // console.log('anyChecked', anyChecked);
+													  if (!anyChecked) {
+													    const star1 = document.getElementById('star1');
+													    star1.focus();
+													    // star1.checked = true;
+													  }
+													};
+													
+													const navRadioGroup = (evt) => {
+													   console.log('key', evt.key, 'code', evt.code, 'which', evt.which);
+													   console.log(evt);
+													  
+													  const star1 = document.getElementById('star1');  
+													  const star2 = document.getElementById('star2');  
+													  const star3 = document.getElementById('star3');  
+													  const star4 = document.getElementById('star4');  
+													  const star5 = document.getElementById('star5');  
+													
+													  if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(evt.key)) {
+													    evt.preventDefault();
+													    // console.log('attempting return');
+													    if (evt.key === 'ArrowRight' || evt.key === 'ArrowDown') {
+													      switch(evt.target.id) {
+													        case 'star1':
+													          star2.focus();
+													          star2.checked = true;
+													          break;
+													        case 'star2':
+													          star3.focus();
+													          star3.checked = true;
+													          break;
+													        case 'star3':
+													          star4.focus();
+													          star4.checked = true;
+													          break;
+													        case 'star4':
+													          star5.focus();
+													          star5.checked = true;
+													          break;
+													        case 'star5':
+													          star1.focus();
+													          star1.checked = true;
+													          break;
+													      }
+													    } else if (evt.key === 'ArrowLeft' || evt.key === 'ArrowUp') {
+													      switch(evt.target.id) {
+													        case 'star1':
+													          star5.focus();
+													          star5.checked = true;
+													          break;
+													        case 'star2':
+													          star1.focus();
+													          star1.checked = true;
+													          break;
+													        case 'star3':
+													          star2.focus();
+													          star2.checked = true;
+													          break;
+													        case 'star4':
+													          star3.focus();
+													          star3.checked = true;
+													          break;
+													        case 'star5':
+													          star4.focus();
+													          star4.checked = true;
+													          break;
+													      }
+													    }
+													  }
+													};
+											 
+											</script>
+
+</html>

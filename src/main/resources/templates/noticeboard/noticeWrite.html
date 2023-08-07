@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+<title>After School :: 공지게시판 글 작성</title>
+<link rel="stylesheet" th:href="@{/css/board.css}">
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+<script>
+
+	window.onload = () => {
+		
+		const fileZone = document.querySelector('#fileZone');
+		const inputFile = document.querySelector('#inputFile');
+		
+		//fileZone을 클릭하면 발생하는 이벤트
+		fileZone.addEventListener('click', (e) => {
+			inputFile.click(e);			
+		});
+		
+		//파일탐색창을 열어 선택한 파일 정보를 files에 할당
+		inputFile.addEventListener('change', (e) => {
+			const files = e.target.files;
+			fileCheck(files);
+		})
+		
+		//fileZone으로 dragenter 이벤트 발생 시 처리하는 이벤트 핸들러
+		fileZone.addEventListener('dragenter', (e) => {
+			e.stopPropagation();
+			e.preventDefault();
+			fileZone.style.border = '2px solid #0B85A1';
+		});
+		
+		//fileZone으로 dragover 이벤트 발생 시 처리하는 이벤트 핸들러
+		fileZone.addEventListener('dragover', (e) => {
+			e.stopPropagation();
+			e.preventDefault();
+		});
+		
+		//fileZone으로 drop 이벤트 발생 시 처리하는 이벤트 핸들러
+		fileZone.addEventListener('drop', (e) => {
+			e.stopPropagation();
+			e.preventDefault();
+			const files = e.dataTransfer.files;
+			fileCheck(files);			
+		});	
+	}
+
+	var uploadCountLimit = 5; // 업로드 가능한 파일 갯수
+	var fileCount = 0; // 파일 현재 필드 숫자 totalCount랑 비교값
+	var fileNum = 0; // 파일 고유넘버
+	var content_files = new Array(); // 첨부파일 배열
+	var rowCount=0;
+	
+	const fileCheck = (files) => {
+
+		let filesArr = Object.values(files); //ECMASCript 2017년 버전부터 제공
+		
+	    // 파일 개수 확인 및 제한
+	    if (fileCount + filesArr.length > uploadCountLimit) {
+	      	alert('파일은 최대 '+uploadCountLimit+'개까지 업로드 할 수 있습니다.');
+	      	return;
+	    } else {
+	    	 fileCount = fileCount + filesArr.length;
+	    }
+	
+		filesArr.forEach((file) => {
+		      var reader = new FileReader();
+			  
+			  //파일 읽기
+		      reader.readAsDataURL(file);
+		      reader.onload = (e) => {
+		        content_files.push(file);
+				
+		        if(file.size > 1073741824) { alert('파일 사이즈는 1GB를 초과할수 없습니다.'); return; }
+			
+		    	rowCount++;
+		        var row="odd";
+		        if(rowCount %2 ==0) row ="even";
+		        
+		        let statusbar = document.createElement('div');
+		        statusbar.setAttribute('class','statusbar ' + row); //<div class='statusbar odd'></div>
+		        statusbar.setAttribute('id','file'+ fileNum );//<div class='statusbar odd' id='file0'></div>
+		        
+		        //statusbar 내의 파일명
+		        let filename = "<div class='filename'>" + file.name + "</div>";
+		        
+		        //statusbar 내의 파일 사이즈	        
+		        let sizeStr="";
+		        let sizeKB = file.size/1024;
+		        if(parseInt(sizeKB) > 1024){
+		        	var sizeMB = sizeKB/1024;
+		            sizeStr = sizeMB.toFixed(2)+" MB";
+		        }else sizeStr = sizeKB.toFixed(2)+" KB";
+		        let size = "<div class='filesize'>" + sizeStr + "</div>";
+		        
+				//statusbar의 삭제 버튼
+		        let btn_delete = "<div class='btn_delete'><input type='button' value='X' onclick=fileDelete('file" + fileNum + "')></div>";
+		       
+		        statusbar.innerHTML = filename + size + btn_delete;
+		        
+		        fileUploadList.appendChild(statusbar);
+	
+		        fileNum ++;
+	       
+		        console.log(file);
+		      
+		      };
+		      
+	    });
+	
+		inputFile.value = '';	
+	}	
+
+	const fileDelete = (fileNum) => {
+	    var no = fileNum.replace(/[^0-9]/g, "");
+	    content_files[no].is_delete = true;
+
+	    document.querySelector('#' + fileNum).remove();
+	    fileCount --;
+	}  
+
+
+	const registerForm = async() => {
+	
+		if(title.value == '') { alert("제목을 입력하세요"); title.focus(); return false;  }
+		if(content.value == '') { alert("내용을 입력하세요"); content.focus(); return false;  }
+		
+		let uploadURL = '';
+		
+		if(content_files.length != 0) //첨부된 파일이 있을 경우
+			uploadURL = '/noticeboard/fileUpload?kind=I';
+		else //첨부된 파일이 없을 경우			
+			uploadURL = '/noticeboard/noticeWrite';
+			
+		let wForm = document.getElementById('WriteForm');
+	 	let formData = new FormData(wForm);
+		for (let i = 0; i < content_files.length; i++) {
+				if(!content_files[i].is_delete) { 							
+					formData.append("SendToFileList", content_files[i]);
+				}
+		}
+
+		await fetch(uploadURL, {			
+			method: 'POST',
+			body: formData			
+			
+		}).then((response)=> response.json())
+		  .then((data) => {
+			  if(data.message == 'good'){
+				alert("게시물이 등록되었습니다.");
+				const classCode = '[[${classCode}]]';
+				document.location.href='/noticeboard/noticeList?classCode=' + classCode + '&page=1';
+			  }	
+		}).catch((error)=> { 
+			alert("시스템 장애로 게시물 등록이 실패했습니다.");
+			console.log((error)=> console.log("error = " + error))
+		});
+
+	}
+
+</script>
+
+<style>
+.filename{
+  display:inline-block;
+  vertical-align:top;
+  width:50%;
+}
+
+.filesize{
+  display:inline-block;
+  vertical-align:top;
+  color:#9fa6c6;
+  width:30%;
+  margin-left:10px;
+  margin-right:5px;
+}
+
+.fileuploadForm {
+ margin: 5px;
+ padding: 5px 5px 2px 30px;
+ text-align: left;
+ width:90%;
+ 
+}
+
+.fileZone {
+  border: none;
+  background-color: #9fa6c6;
+  color: white;
+  text-align: center;
+  vertical-align: middle;
+  padding: 2.5rem;
+  font-size:120%;
+}
+
+.fileUploadList {
+  width: 97%;
+  height:auto;
+  padding: 5px;
+  font-size:120%;  
+}
+
+.btn_delete{
+  display: inline-block;
+  width: 15%;
+  cursor:pointer;
+  vertical-align:top
+}
+
+.statusbar{
+  border-bottom:1px solid #92AAB0;;
+  min-height:25px;
+  width:96%;
+  padding:10px 10px 0px 10px;
+  vertical-align:top;
+}
+.statusbar:nth-child(odd){
+  background:#EBEFF0;
+}
+
+</style>
+
+</head>   
+<body>
+
+
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+     			<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		<!-- if session.role = teacher -->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	  
+  <main>
+  
+	<div class="board">
+		
+		<!-- 목록으로 가는 링크 -->
+		<a th:href="@{'/noticeboard/noticeList?classCode=' + ${classCode} + '&page=1'}" class="toList_btn">공지게시판 ></a>
+		
+			<!-- 글쓰기 버튼 -->
+			<div class="board_WM_header">
+				<div class="board_WM_title">글쓰기</div>
+				<input type="button" class="write_btn" value="완료" onclick="registerForm()" />
+			</div>
+			<!-- bar -->
+			
+			<form id="WriteForm"  class="board_WM_writeForm" method="POST">
+				<input type="hidden" name="classCode" th:value="${classCode}">
+				<div>
+					<input type="text"  class="board_WM_title_input" id="title" name="noticeTitle"  placeholder="제목을 입력하세요">
+				</div>
+				
+				<!-- 파일 첨부 -->
+				<div class="fileuploadForm">
+					<input type="file" id="inputFile" name="uploadFile" style="display:none;" multiple />
+					<div class="fileZone" id="fileZone">파일 첨부를 하기 위해서는 클릭하거나 여기로 파일을 드래그 하세요.<br>첨부파일은 최대 5개까지 등록이 가능합니다.</div>
+			  		<div class="fileUploadList" id="fileUploadList"></div>
+				</div>
+	
+				<input type="hidden" id="writer" name="noticeWriter" th:value="${session.username}">
+				<input type="hidden" id="userid" name="userid" th:value="${session.userid}">
+				
+				<div>
+					<textarea  class="board_WM_content" id="content" cols="100" rows="100" name="noticeContent" placeholder="내용을 작성하세요"></textarea>
+				</div>
+			</form>		
+		</div>
+
+	</main>
+	
+		
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	<br><br>
+</body>
+</html>

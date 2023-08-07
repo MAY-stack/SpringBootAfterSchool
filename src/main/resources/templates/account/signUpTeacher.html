@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 회원가입(강사)</title>
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+    window.onload = () => {
+        var imgCheck = "N";
+        var imgZone = document.querySelector('#imageZone');
+        var fileEvent = document.querySelector('#imageFile');
+        
+        //imageZone 영역 클릭 시 파일이벤트 처리. 자바스크립트에선 이벤트 발생 시 이벤트 정보를 담고 있는 event(e)라는 객체를 자동 생성.
+        imgZone.addEventListener('click', (e) => {
+            fileEvent.click(e) //사용자가 만든 UI를 통해 <input type="file">을 클릭하는 것과 같은 효과를 내게 됨
+        });
+        
+        //파일 선택창 열기 이벤트. 
+        fileEvent.addEventListener('change', (e) => { //파일선택해서 파일을 가져오는 거
+            const files = e.target.files; //선택한 파일 정보가 e.target.files(배열)에 저장
+            showImage(files); //읽어 온 파일을 인자로 받아서 이미지 미리보기를 실행
+        });
+        
+        
+        const showImage = (files) => {
+        
+            const imgFile = files[0];
+        
+            //if(imgFile.size > 1024*1024) { alert("1MB 이하 파일만 올려주세요."); return false; }
+            if(imgFile.type.indexOf("image") < 0) { alert("이미지 파일만 올려주세요"); return false; }
+        
+            const reader = new FileReader(); //new 연산자를 통해서 FileReader() 객체를 reader가 참조(상속)
+            reader.onload = function(event){ //아래 img 태그로 만들어진 element에 이미지를 보낼거라는 걸 결정--> 파일을 읽고 나서 해야 할 일...
+                imageZone.style.backgroundImage="url("+event.target.result+")";
+                //imgZone.innerHTML = "<img src=" + event.target.result + " id='uploadImg' style='width:350px;height:auto'>";
+            };
+            
+            reader.readAsDataURL(imgFile); //실제로 파일을 읽는 부분은 여기...
+            console.log(event.target.result);
+            imgCheck = "Y";
+        }
+        
+        btnRegister.addEventListener('click', async () => {
+            
+            const Pass = password.value;
+            const Pass1 = password1.value;
+            //유효성 검사
+            if(userid.value == '') { alert("아이디를 입력하세요"); userid.focus();  return false; }
+            if(idCheckNotice.value){alert('이미 사용중인 아이디입니다'); userid.focus(); return false;}
+            if(email.value == '') { alert("이메일주소를 입력하세요"); email.focus(); return false; }
+            if(emailCheckNotice.value){alert("이미 회원가입된 이메일입니다"); email.focus(); return false;}
+            if(!email.value.match(/[\w\-\.]+\@[\w\-\.]+/g)){alert("이메일 형식을 확인하세요"); email.focus(); return false;}
+            if(username.value == '') { alert("이름을 입력하세요"); username.focus(); return false; }
+            if(verifycode.value == ''){alert("인증코드를 입력하세요"); verifycode.focus(); return false;}
+            if(Pass == '') { alert("비밀번호를 입력하세요"); password.focus(); return false; }
+            if(!checkPass1()){alert("유효한 비밀번호인지 확인하세요"); password.focus(); return false};
+            if(Pass1 == '') { alert("비밀번호 확인칸을 입력하세요"); password1.focus(); return false; }
+            if(!checkPass2()){alert("암호와 동일하게 썼는지 확인하세요"); password1.focus(); return false};
+            
+            address.value = addr1.value + ":" + addr2.value;
+            if(telno.value == '') { alert("전화번호를 입력하세요"); telno.focus(); return false; }
+            //전화번호 문자열 정리
+            const beforeTelno = telno.value;
+            const afterTelno = beforeTelno.replace(/\-/gi,"").replace(/\ /gi,"").trim();
+            telno.value = afterTelno;
+            
+            if(intro_line1.value== ''){alert("한줄 소개를 입력하세요"); intro_line1.focus(); return false;}
+            intro_line.value = '#' + document.querySelector("input[name='category']:checked").value + " #" + intro_line1.value;
+            
+            if(intro.value == ''){alert("자기 소개를 입력하세요"); introduce.focus(); return false;}
+            
+            
+            let formData = new FormData(RegistryForm);          
+            
+            await fetch('/account/signUpTeacher', {
+                method: 'POST',
+                body: formData,
+            }).then((response) => response.json())
+            .then((data) => {
+                if(data.msg === 'good'){
+                    alert(decodeURIComponent(data.username) + "님, 회원 가입을 축하 드립니다");
+                    document.location.href="/account/login";
+                } else {
+                    alert("서버 장애로 회원 가입에 실패했습니다");
+                }
+            });
+            
+        });
+    }
+	
+    const checkPass1 = () => {
+        const Pass = password.value;
+        const Pass1 = password1.value;
+        const pass1_valid = document.querySelector(".pass1_valid");
+        // 암호유효성 검사
+        //자바스크립트의 정규식(Regular Expression)
+        let num = Pass.search(/[0-9]/g); // 0-9까지의 숫자가 들어 있는지 검색. 검색이 안되면 -1을 리턴
+        let eng = Pass.search(/[a-z]/g); //i : 알파벳 대소문자 구분 없이... 
+        let eng2 = Pass.search(/[A-Z]/g);
+        let spe = Pass.search(/[`~!@@#$%^&*|₩₩₩'₩";:₩/?]/gi);	//특수문자가 포함되어 있는가 검색
+        if(Pass.length < 8 || Pass.length > 20) {pass1_valid.innerHTML = "암호는 8자리 ~ 20자리 이내로 입력해주세요."; return false; }
+        else if(Pass.search(/\s/) != -1){ pass1_valid.innerHTML = "암호는 공백 없이 입력해주세요."; return false; }
+        else if(num < 0 || eng < 0 || eng2<0 || spe < 0 ){ pass1_valid.innerHTML ="암호는 영어 대소문자,숫자,특수문자를 혼합하여 입력해주세요."; return false; }
+        else {pass1_valid.innerHTML ="사용 가능한 암호입니다."; return true;}
+    }
+    const checkPass2 = () => {
+        const Pass = password.value;
+        const Pass1 = password1.value;
+        const pass2_valid = document.querySelector(".pass2_valid");
+
+        if(Pass != Pass1) 
+            { pass2_valid.innerHTML = "비밀번호가 일치하지 않습니다. 다시 입력해주세요"; password1.focus(); return false; }
+        else{
+            pass2_valid.innerHTML = ""; return true;
+        }
+    }
+
+	const idCheck = async () => {
+		
+		const userid = document.querySelector("#userid");
+		
+		await fetch('/account/idCheck',{		
+			method: "POST",
+			body: userid.value,		
+		}).then((response) => response.text())
+		  .then((data) => {		     
+				const idCheckNotice = document.querySelector('#idCheckNotice');
+				if(data == 0)
+					{
+					idCheckNotice.innerHTML = "사용 가능한 아이디입니다.";
+					idCheckNotice.value = 0;
+					}
+				else {
+					idCheckNotice.innerHTML = "이미 사용중인 아이디입니다.";
+					//email.value = '';
+					userid.focus();
+					idCheckNotice.value=1;
+				}
+		  });
+		
+	}
+	const emailCheck = async () => {
+		
+		const email = document.querySelector("#email");
+		
+		await fetch('/account/emailCheck',{		
+			method: "POST",
+			body: email.value,		
+		}).then((response) => response.text())
+		  .then((data) => {		     
+				const idCheckNotice = document.querySelector('#emailCheckNotice');
+				if(data == 0)
+					{
+					emailCheckNotice.innerHTML = "사용 가능한 이메일입니다.";
+					emailCheckNotice.value = 0;
+					}
+				else {
+					emailCheckNotice.innerHTML = "이미 회원가입된 이메일입니다.";
+					email.focus();
+					emailCheckNotice.value=1;
+				}
+		  });
+		
+	}
+	
+	const verifyCode = async () => {
+
+	}
+	
+	const searchAddr = () => {
+		
+		window.open(
+		          "/account/searchAddr",
+		          "주소검색",
+		          "width=900, height=540, top=50, left=50"
+		);
+		
+	}
+
+
+
+
+</script>
+</head>
+<body>
+
+	
+	<!-- header: all -->
+	  <header>
+	  <a href="/main" style="text-decoration: none;">
+	    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">After School</h1>
+	    <h3>온라인 방과후 교육 프로그램</h3>
+	    </a>
+	  </header>
+	<!-- end of header: all -->
+	
+
+	
+	<main>
+    <div class="main">
+        <div class="signUpStudent">
+
+            <div class="studentWriteForm">
+                <h1>회원가입</h1>
+                <p class="singup_notice">*는 필수 입력사항입니다.</p>
+                <form id="RegistryForm" name="RegistryForm" class="RegistryForm" method="POST">
+                    <div class="input_container">
+                        <div style="width:fit-content;">*프로필 사진 (1:1 비율의 사진을 권장합니다)</div>
+                        <div class="imageZone" id="imageZone"></div>
+                        <input type="file" name="fileUpload" id="imageFile" style="display:none;" />
+                    </div>
+                    <div class="userid_container input_container">
+                         <div style="width:fit-content;">*아이디</div>
+                        <input type="text" class="input_field" id="userid" name="userid" onchange="idCheck()">
+                        <div id="idCheckNotice"></div>			
+                    </div>
+                    <div class="email_container input_container">
+                        <div style="width:fit-content;">*이메일</div>
+                        <input type="text" class="input_field" id="email" name="email" onchange="emailCheck()">
+                        <div id="emailCheckNotice"></div>
+                    </div>
+                    <div class="name_container input_container_row">
+                        <div class="username_container input_container">
+                            <div style="width:fit-content;">*이름</div>
+                            <input type="text" class="input_field" id="username" name="username">
+                        </div>
+                        <div class="nname_container input_container">
+                            <div style="width:fit-content;">*인증코드</div>
+                            <input type="text" id="verifycode" name="verifycode" class="input_field" onchange="verifyCode()">
+                            <div id="verifyNotice"></div>
+                        </div>
+                    </div>
+                    <div class="pass_container input_container">
+                        <div style="width:fit-content;">*비밀번호</div>
+                        <input type="password" class="input_field" id="password" name="password" onchange="checkPass1()" placeholder="영어 대,소문자, 숫자, 특수기호를 포함한 8~20자">
+                        <div class="pass1_valid"></div>
+                        <div style="width:fit-content;">*비밀번호 재입력</div>
+                        <input type="password" class="input_field" id="password1" name="password1" onchange="checkPass2()">
+                        <div class="pass2_valid"></div>
+                    </div>
+                    <div class="school_container input_container" >
+                        <div style="width:fit-content;">소속</div>
+                        <input type="text" class="input_field" id="company" name="company">
+                    </div>
+                    <div class="input_container_row">
+                        <div class="telno_container input_container">
+    
+                            <div style="width:fit-content;">*전화번호</div>
+                            <input type="text" id="telno" name="telno" class="input_field">
+                        </div>
+                        <div class="gender_container input_container">
+                            <div style="width:fit-content;">성별</div>
+                            <div class="gender_radio_container input_container_row">
+                                <label><input type="radio" name="gender" value="M" checked><div class="gender_radio">남</div></label>
+                                <label><input type="radio" name="gender" value="F"><div class="gender_radio">여</div></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="addr_container input_container">
+                        <div style="width:fit-content;">주소</div>
+                        <div class="addr_input" onclick="searchAddr()">
+                            <input type="text" id="addr1" class="input_field" name="addr1" readonly>
+                            <input type="button" id="btn_addrSearch" class="btn_addrSearch" value="검색">
+                        </div>
+                        <input type="hidden" id="zipcode" class="input_field" name="zipcode">
+                        <input type="text" id="addr2" class="input_field" name="addr2" placeholder="상세주소">
+                        <input type="hidden" id="address" name="address">
+                    </div>
+                    <div class="input_container">
+                        <div style="width:fit-content;">생년월일</div>
+                        <div class="birthdate_container input_container">
+                            <input type="text" id="input_date" name="birthdate" class="input_field" readonly>
+                            <div id="div_calender" class="div_calender" style="display:none;">
+                                <div class="calendar_header">
+                                    <button type="button" onClick="changeMonth(-1)" class="calendar_btn">&lt;</button>
+                                    <input type="number" id="year" value="2000" class="calendar_form" onchange="changeMonth()">
+                                    <select id="month" class="calendar_form" onchange="changeMonth()">
+                                    <option value="1">1월</option>
+                                    <option value="2">2월</option>
+                                    <option value="3">3월</option>
+                                    <option value="4">4월</option>
+                                    <option value="5">5월</option>
+                                    <option value="6">6월</option>
+                                    <option value="7">7월</option>
+                                    <option value="8">8월</option>
+                                    <option value="9">9월</option>
+                                    <option value="10">10월</option>
+                                    <option value="11">11월</option>
+                                    <option value="12">12월</option>
+                                    </select>
+                                    <button type="button" onClick="changeMonth(1)"  class="calendar_btn"> &gt;</button>
+                                </div>
+                                <table class="calendar_table" cellspacing="10">
+                                    <thead>
+                                        <tr class="calendar_day">
+                                            <th>월</th>
+                                            <th>화</th>
+                                            <th>수</th>
+                                            <th>목</th>
+                                            <th>금</th>
+                                            <th>토</th>
+                                            <th>일</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tb_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="role" name="role" value="TEACHER">
+                    <div class="input_container">
+                        <div style="width:fit-content;">*강사 한줄 소개 (프로필과 함께 노출됩니다)</div>
+                        <input type="text" id="intro_line1" name="introduce_line1" class="input_field">
+                        <input type="hidden" id="intro_line" name="introduceLine">
+                        <div class="gender_radio_container input_container_row">
+	                        <label><input type="radio" name="category" value="수학"><div class="gender_radio">수학</div></label>
+	                        <label><input type="radio" name="category" value="영어"><div class="gender_radio">영어</div></label>
+	                        <label><input type="radio" name="category" value="코딩"><div class="gender_radio">코딩</div></label>
+	                        <label><input type="radio" name="category" value="미술/공예"><div class="gender_radio">미술/공예</div></label>
+                        </div>
+                    </div>
+
+                    
+                        <div style="width:fit-content;">*강사 소개</div>
+                        <textarea id="intro" name="introduce" class="input_field" style="resize:none;"></textarea>
+                    </div>
+                    <input type="button" id="btnRegister" class="btn_signup" value="회원가입하기">                
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    		
+	</main>
+	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    <script>
+        //date-picker 시작
+        function checkLeayYear(year){
+                if(year%400 == 0) {
+                    return true;
+                }else if (year%100 == 0){
+                    return false;
+                } else if(year%4 == 0){
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+    
+            function getFirstDayOfWeek(year, month){
+                if(month<10) month = "0" + month;
+                return (new Date(year + "-" + month + "-01")).getDay();
+            }
+    
+            function changeYearMonth(year,month){
+                let month_day = [31,28,31,30,31,30,31,31,30,31,30,31];
+                if(month == 2 ){
+                    if(checkLeayYear(year))month_day[1] = 29;
+                }
+                let first_day_of_week = getFirstDayOfWeek(year,month);
+                let arr_calender = [];
+                if(first_day_of_week != 0){
+
+                    for(let i =first_day_of_week-1;i>0;i--){
+                        if(month-2 < 0){arr_calender.push(month_day[11]-i+1)}
+                        else{arr_calender.push(month_day[month-2]-i+1)};
+                    }
+                    for(let i=1;i<=month_day[month-1];i++){
+                        arr_calender.push(String(i));
+                    }
+                    let remain_day = 7- (arr_calender.length%7);
+                    if(remain_day == 7){remain_day = 0};
+                    if(remain_day < 7){
+                        for(let i=0;i<remain_day;i++){
+                            arr_calender.push(String(i+1));
+                        }
+                    }
+                    renderCalender(arr_calender,year,month,remain_day);
+                }else{
+                    for(let i =6;i>0;i--){
+                        if(month-2 < 0){arr_calender.push(month_day[11]-i+1)}
+                        else{arr_calender.push(month_day[month-2]-i+1)};
+                    }
+                    for(let i=1;i<=month_day[month-1];i++){
+                        arr_calender.push(String(i));
+                    }
+                    let remain_day = 7- (arr_calender.length%7);
+                    if(remain_day == 7){remain_day = 0};
+                    if(remain_day < 7){
+                        for(let i=0;i<remain_day;i++){
+                            arr_calender.push(String(i+1));
+                        }
+                    }
+                    renderCalender(arr_calender,year,month,remain_day);
+                }
+            }
+    
+            function renderCalender(data,year,month,remain_day){
+                let h=[];
+                let first_day_of_week = getFirstDayOfWeek(year,month);
+                if(first_day_of_week != 0){
+                    for(let i=0;i<first_day_of_week-1;i++){
+                        if(i==0){
+                            h.push('<tr>');
+                        }else if(i%7==0){
+                            h.push('</tr>');
+                            h.push('<tr>');
+                        }
+                        h.push("<td style='cursor:pointer;background-color:transparent; box-shadow:none; color:rgba(0,0,0,0.5);cursor:default;'>"+data[i]+"</td>");
+                    }
+                    for(let i=first_day_of_week-1;i<data.length-remain_day;i++){
+                        if(i==0){
+                            h.push('<tr>');
+                        }else if(i%7==0){
+                            h.push('</tr>');
+                            h.push('<tr>');
+                        }
+                        if(data[i]<10){
+                            h.push("<td onclick='setDate("+data[i]+")' class='selected0" + data[i]+"' style='cursor:pointer;'>"+data[i]+"</td>");
+                        }else{
+                            h.push("<td onclick='setDate("+data[i]+")' class='selected" + data[i]+"' style='cursor:pointer;'>"+data[i]+"</td>");
+                        }
+                    }
+                    if(remain_day<7){
+
+                        for(let i=0;i<remain_day;i++){
+                            
+                            h.push("<td style='cursor:pointer;background-color:transparent; box-shadow:none; color:rgba(0,0,0,0.5);cursor:default;'>"+(i+1)+"</td>");
+                        }
+                        h.push('</tr>');
+                    }
+                }else{
+                    for(let i=0;i<6;i++){
+                        if(i==0){
+                            h.push('<tr>');
+                        }else if(i%7==0){
+                            h.push('</tr>');
+                            h.push('<tr>');
+                        }
+                        h.push("<td style='cursor:pointer;background-color:transparent; box-shadow:none; color:rgba(0,0,0,0.5);cursor:default;'>"+data[i]+"</td>");
+                    }
+                    for(let i=6;i<data.length-remain_day;i++){
+                        if(i==0){
+                            h.push('<tr>');
+                        }else if(i%7==0){
+                            h.push('</tr>');
+                            h.push('<tr>');
+                        }
+                        if(data[i]<10){
+                            h.push("<td onclick='setDate("+data[i]+")' class='selected0" + data[i]+"' style='cursor:pointer;'>"+data[i]+"</td>");
+                        }else{
+                            h.push("<td onclick='setDate("+data[i]+")' class='selected" + data[i]+"' style='cursor:pointer;'>"+data[i]+"</td>");
+                        }
+                    }
+                    if(remain_day<7){
+
+                        for(let i=0;i<remain_day;i++){
+                            
+                            h.push("<td style='cursor:pointer;background-color:transparent; box-shadow:none; color:rgba(0,0,0,0.5);cursor:default;'>"+(i+1)+"</td>");
+                        }
+                        h.push('</tr>');
+                    }
+                }
+    
+                $("#tb_body").html(h.join(""));
+            }
+    
+            function setDate(day){
+                if(day<10) day = "0" + day;
+                if(current_month<10){
+                    $("#input_date").val(current_year+"-0"+current_month+"-"+day);
+                }else{
+                    $("#input_date").val(current_year+"-"+current_month+"-"+day);
+                }
+                $("#div_calender").hide();
+            }
+    
+            function changeMonth(diff){
+                if(diff == undefined){
+                    current_year = $('#year').val();
+                    current_month = parseInt($("#month").val());
+                } else {
+                    current_month = current_month + diff;
+                    if(current_month == 0){
+                        current_year = current_year-1;
+                        current_month = 12;
+                    }else if(current_month == 13){
+                        current_year = current_year+1;
+                        current_month = 1;
+                    }
+                }
+                loadCalender();
+            }
+    
+            function loadCalender(){
+                $("#year").val(current_year);
+                $('#month').val( current_month);
+                changeYearMonth(current_year,current_month);
+            }
+            let current_year = (new Date()).getFullYear();
+            let current_month = (new Date()).getMonth() + 1;
+    
+            $("#input_date").click(function(){
+                if(input_date.value!=""){
+                    let str = input_date.value;
+                    str = str.slice(-2);
+                    for(i=0;i<31;i++){
+                        if(i<10){
+                            $('.selected0'+i).removeClass("selected");
+                        }$('.selected'+i).removeClass("selected");
+                    }
+                    $('.selected'+str).addClass("selected");
+                }
+                $('#div_calender').toggle();
+            });
+            loadCalender();
+            //date-picker 끝
+    </script>
+</body>
+</html>

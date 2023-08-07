@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>After School :: 학교검색</title>
+    <link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+    <script>
+        const searchSchool = () => {
+            document.location.href='/account/searchSchool?page=1&schoolSearch='+schoolSearch.value;
+
+        }
+        const addrCheck = (schoolName) => {
+	
+            window.opener.document.getElementById("school").value = schoolName;
+            window.close();
+            
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <input type="text" name="school" id="schoolSearch">
+        <input type="button" value="검색" onclick="searchSchool()">
+    </div>
+    <table class="InfoTable">
+    	<thead>    	
+	        <tr>
+	             <th>학교이름</th>
+	             <th>주소</th>
+	             <th>선택</th>
+	        </tr>
+    	</thead>
+       <tbody>
+            <th:block th:if="${list != null}">
+
+                <tr th:each="list:${list}" 
+                onMouseover="this.style.background='#46D2D2';" onmouseout="this.style.background='white';">
+                    <td th:text="${list.schoolName}"></td>
+                    <td style="text-align:left;">[[${list.schoolAddr}]]</td>  
+                    <td><input type="button" value="선택" th:onclick="addrCheck([[${list.schoolName}]])" > </td>
+                </tr>
+            </th:block>	
+            <th:block th:if="${list == null}">
+
+                <tr>
+                    <td colspan="3">검색된 학교가 없습니다.</td>
+                </tr>
+            </th:block>
+        </tbody>
+        
+    </table>
+
+    <div>
+        [(${pageListView})]
+    </div>
+</body>
+</html>

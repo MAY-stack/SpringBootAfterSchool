@@ -1,0 +1,110 @@
+.tab-wrapper {
+  position: relative;
+  height: 50rem;
+  clear: both;
+  padding: 2rem 1.5rem 0;
+  overflow: hidden;
+}
+
+.tab-item {
+  float: left;
+  margin-right:2rem;
+  [type="radio"] {
+    display: none;
+    
+    &:checked ~ .tab-label {
+      background: #a6b3e0;
+      color: white;
+      z-index: 5;
+      
+      
+      & ~ .tab-content {
+        z-index: 5;  
+        display:block;
+      }
+    }
+  }
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  position: relative;
+  left: 1px;
+  bottom: 2px;
+  height: 36px;
+  padding-right: 24px;
+  padding-left: 24px;
+  background: white;
+  border:none;
+  margin-left: 2px;
+  border-radius:1.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 2rem;
+  color: #a6a6a6;
+}
+
+.tab-content {
+	display:none;
+  position: absolute;
+  top: 8rem;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.tab-item_classInfo {
+  float: left;
+  margin-right:2rem;
+  [type="radio"] {
+    display: none;
+    
+    &:checked ~ .tab-label_classInfo {
+      background: #a6b3e0;
+      color: white;
+      z-index: 5;
+      
+      
+      & ~ .tab-content_classInfo {
+        z-index: 5;  
+        display:block;
+      }
+    }
+  }
+}
+.tab-label_classInfo {
+  display: flex;
+  align-items: center;
+  position: relative;
+  left: 1px;
+  bottom: 2px;
+  height: 36px;
+  padding:2.4rem;
+  background: #D8dbec;
+  border:none;
+  margin-left: 2px;
+  border-radius:1.8rem 1.8rem 0 0;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 2rem;
+  color: #a6a6a6;
+}
+.tab-label_classInfo>a{
+	color:#a6a6a6;
+}
+.tab-content_classInfo {
+	display:none;
+  position: absolute;
+  top: 6.5rem;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  padding: 1.5rem;
+  overflow: auto;
+  border-top:1rem #a6b3e0 solid;
+  border-radius:1rem;
+  background-color:#f9faff;
+}

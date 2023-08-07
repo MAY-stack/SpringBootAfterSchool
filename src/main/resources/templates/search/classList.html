@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>After School :: 강좌 조회</title>
+    <link th:href="@{/css/board.css}" rel="stylesheet"/> 
+    <link th:href="@{/css/AfterSchool.css}" rel="stylesheet" />   
+    <script>
+    	// 검색
+    	// category
+   		const setCategory = (t) =>{
+            document.location.href='/search/classList?category='+t.name+'&keyword=' + keyword.value;
+   		} 
+        const search = () => {
+            const keyword = document.querySelector('#keyword');
+            document.location.href='/search/classList?keyword=' + keyword.value;
+
+        }
+        
+      	// enter키를 눌러도 검색 가능
+    	const press = () => {
+    		if(event.keyCode==13) search();
+    	}
+    	
+    	//header에 있는 로그아웃 기능
+    	function logout() {
+    		
+    		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+    			
+    			let authkey = getCookie('authkey');
+    			if(authkey !== undefined)
+    				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+    			document.location.href='/account/logout';
+    		}
+    	}
+
+   		const getCookie = (name) => {
+   			
+   			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+   			  let getItem = [];
+   		
+   			  for (let i = 0; i < cookies.length; i++) {		    
+   			    if (cookies[i][0] === name) {
+   			      getItem.push(cookies[i][1]);
+   			      break;
+   			    }
+   			  }
+   			  if (getItem.length > 0) {
+   					console.log(getItem[0]);
+   			    	return decodeURIComponent(getItem[0]);
+   			  }		
+   		}//end of header logout
+   		
+   		
+    </script>
+
+</head>
+<body>
+
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+     			<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		<!-- if session.role = teacher -->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	  
+
+	<main class="main">
+	<div style="grid-column:2/3; width:90%;">
+	<h1 class="classList_title">강좌 목록</h1>
+	    <!-- 검색 -->
+	    <div class="board_search_container classList">
+	        <input type="text" name="keyword" id="keyword" placeholder="검색할 강좌 제목을 입력해 주세요." onkeydown="press()" class="search_input_board">
+	        <input type="button" value="검색" onclick="search()" class="search_btn">
+	    </div>
+	    <br>
+	    <!-- 카테고리 선택 -->
+	    <div>
+	    	<input type="hidden" id="category" value="">
+	        <input type="button" id="all" name="" value="전체" onclick="setCategory(this)" class="gender_radio">
+	        <input type="button" id="A" name="A" value="수학" onclick="setCategory(this)" class="gender_radio">
+	        <input type="button" id="B" name="B" value="영어" onclick="setCategory(this)" class="gender_radio">
+	        <input type="button" id="C" name="C" value="코딩" onclick="setCategory(this)" class="gender_radio">
+	        <input type="button" id="D" name="D" value="미술/공예" onclick="setCategory(this)" class="gender_radio">
+	    </div>
+	    <br>
+
+	    <!--section class-->
+	    <section class="classListboard">
+
+	                <th:block th:if="${list != null}">
+	                    <div class="item" th:each="list : ${list}">
+	                        <!-- class 사진 -->
+	                        <div><img class="classImage" th:src="@{'/classImage/' + ${list.storedClassProfilename}}"></div>
+	        
+	                        <!-- class 제목 -->
+	                        <div class="classItem_className" ><a th:href="@{'/search/classInfo?classCode=' + ${list.classCode} }" th:text="${list.className}"></a></div>
+	        
+	                        <!-- teacher 이름 -->
+	                        <div class="classItem_teacher">[[${list.username}]]</div>
+	                        <div class="classItem_bottom">
+		                        <!-- 카테고리 -->
+		                        <div th:switch="${list.category}" class="classItem_category">
+								    <span th:case="A">수학</span>
+								    <span th:case="B">영어</span>
+								    <span th:case="C">코딩</span>
+								    <span th:case="D">미술/공예</span>
+								</div>
+	
+		        
+		                        <!-- 평균 별점 -->
+		                        <div class="star_bar"><span id="starBar" th:style="@{'width:calc('+${list.avgRate}+' * 20%)'}"></span><div class="star_mask"></div></div><span th:text="${list.avgRate}"></span>
+	                        </div>
+
+	                    </div>
+	                </th:block>	            
+
+	    </section>
+	    </div>
+    </main>
+    
+    <footer>
+	    <p>footer</p>
+	    <small>Go back to link<a href="/link">Click</a></small>
+  	</footer>
+</body>
+</html>

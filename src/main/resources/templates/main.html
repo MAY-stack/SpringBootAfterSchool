@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 메인 페이지</title>
+<link th:href="@{/css/board.css}" rel="stylesheet"/>
+<link th:href="@{/css/AfterSchool.css}" rel="stylesheet" />
+
+<script>
+
+	
+	//header에 있는 로그아웃 기능
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+	
+		const getCookie = (name) => {
+			
+			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+			  let getItem = [];
+		
+			  for (let i = 0; i < cookies.length; i++) {		    
+			    if (cookies[i][0] === name) {
+			      getItem.push(cookies[i][1]);
+			      break;
+			    }
+			  }
+			  if (getItem.length > 0) {
+					console.log(getItem[0]);
+			    	return decodeURIComponent(getItem[0]);
+			  }		
+		}//end of header logout
+		
+</script>
+
+</head>
+<body>
+	
+	<!-- header: all -->
+	  <header>
+	  <a href="/main" style="text-decoration: none;">
+	    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">After School</h1>
+	    <h3>온라인 방과후 교육 프로그램</h3>
+	    </a>
+	  </header>
+	<!-- end of header: all -->
+	<br>
+	
+	<main class="main">
+	<div style="grid-column:2/3; width:100%;">
+
+		<!-- 강좌소개 / 강사소개 / 자유게시판 버튼 -->
+		<div class="main_btn_container">
+			<input type="button" class="btn" value="강좌 소개" onclick="location.href='/search/classList'">
+			<input type="button" class="btn" value="강사 소개" onclick="location.href='/search/teacherList'">
+			<input th:if="${session.role == 'STUDENT'}" type="button" class="btn" value="자유게시판" onclick="location.href='/freeboard/freeList?page=1'">
+			<input th:if="${session.role != 'STUDENT'}" type="button" class="btn" value="자유게시판" onclick="alert('학생들만 볼 수 있는 게시판입니다 메롱'); return false;">
+		</div>
+		<!-- banner -->
+		<div>
+		<a th:href="@{'/search/classInfo?classCode=' + ${topclass.classCode}}" style="display:flex;">
+			<div style="width:50%;height:300px;background-image:url('/images/banner/banner1.png'); background-size:contain; background-repeat:no-repeat"></div>
+			<div th:style="@{'width:50%; height:300px; background-image:url(/classImage/' + ${topclass.storedClassProfilename}+'); background-repeat:no-repeat; background-size:contain;'}"></div>
+		</a>
+		</div>
+		<!-- freeBoard list -->
+		<div class="main_board_list">
+		<h1>자유게시판</h1>
+		<table class="board_list">
+			<thead>
+				<tr class="list_header" style="font-weight:600;font-size:2rem;">
+					<!-- <th>번호</th> -->		
+					<th>제목</th>
+					<th>작성자</th>
+					<th>조회수</th>
+				</tr>
+			</thead>
+			<tr th:each="list: ${list}" class="list_body">
+				<div th:if="${session.role == 'STUDENT'}">
+				<td><a id="hypertext" th:href="@{'/freeboard/freeView?seqno=' + ${list.seqno} + '&page=1&keyword='}"  
+					onmouseover="this.style.textDecoration='underline'"  
+					onmouseout="this.style.textDecoration='none'"><span th:text="${list.title}"></span></a></td>
+				<td th:text="${list.writer}"></td>			
+				<td th:text="${list.hitno}"></td>
+				</div>
+				<div th:if="${session.role != 'STUDENT'}">
+					<td><a id="hypertext" onclick="alert('학생들만 볼 수 있는 게시판입니다 메롱'); return false;"><span th:text="${list.title}"></span></a></td>
+				<td th:text="${list.writer}"></td>			
+				<td th:text="${list.hitno}"></td>
+				</div>
+			</tr>
+		</table>
+		</div>
+	</div>
+		<!-- login -->
+		<div class="box1">
+			<!-- if not logged in -->
+			<th:block th:if="${session.userid == null}">
+				<input type="button"  class="btn" value="로그인" onclick="location.href='/account/login'">
+				<a href="/account/searchID" class="main_btns">아이디 찾기</a>
+				<a href="/account/tempPassword" class="main_btns">비밀번호 찾기</a>
+				<a href="/account/signUp" class="main_btns">회원가입</a>
+			</th:block>
+			
+			<!-- if logged in -->
+			<th:block th:if="${session.userid != null}">
+
+				<div th:if="${session.role == 'STUDENT'}"><img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px; float:left;">
+				</div>
+				<div th:if="${session.role == 'TEACHER'}"><img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px; float:left;">
+				</div>
+				<div style=" margin-top:1rem;">
+				<span style="font-size:larger; font-weight: bolder;">[[${session.username}]]</span><span style="font-size:15px;"> 님</span>
+				</div>
+
+				<a href="javascript:logout()" style="font-size:smaller;" class="main_logout_btn">로그아웃</a>
+
+				<!--if role == student -->
+				<div th:if="${session.role == 'STUDENT'}">
+				<a  class="btn" th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none; width:100%;margin:0; padding:0 1.5rem;line-height: 60px; float:left;">내 강의실</a>
+		      	</div>
+		      	<!--if role == teacher -->
+				<div th:if="${session.role == 'TEACHER'}">
+				<a  class="btn" th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none; width:100%;margin:0; padding:0 1.5rem;line-height: 60px; float:left;">내 강좌 목록</a>
+		      	</div>
+		      	<!--if role == manager -->
+				<div th:if="${session.role == 'MANAGER'}">
+				<a  class="btn" href="/manager/memberInfo" style="text-decoration: none; width:100%;margin:0; padding:0 1.5rem;line-height: 60px; float:left;">관리자 페이지</a>
+		      	</div>
+			</th:block>
+		</div>
+	</main>
+	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+</body>
+</html>

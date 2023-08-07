@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	
+	This is main
+	<a href="/main">main</a>
+	
+	<div> account
+		<br><a href="/account/login">/account/login</a>
+		
+		<br><a href="/account/searchID">/account/searchID</a>
+		<br><a href="/account/tempPassword">/account/searchPassword</a>
+		
+		<br><a href="/account/signUp">/account/signUp</a>
+		
+		<br><a href="/account/signUpStudent">/account/signUpStudent</a>
+		<br><a href="/account/signUpTeacher">/account/signUpTeacher</a>
+		
+		<br><a href="/account/searchAddr">X /account/searchAddr</a>
+		<br><a href="/account/searchSchool">X /account/searchSchool</a>
+		<br><a th:href="@{'/account/changePassword?userid=' + ${session.userid}}">Change Password</a><br>
+	</div>
+	
+	<div> search
+		<br><a href="/search/classList"> /search/classList</a>
+		<br><a href="/search/teacherList"> /search/teacherInfo</a>
+	</div>
+	
+	<div> freeBoard
+		<br><a href="/freeboard/freeList?page=1">X /freeboard/freeList?page=1</a>	
+		<br><a href="/freeboard/freeWrite"> /freeboard/freeWrite</a>
+	</div>
+	
+	<div> noticeBoard (classCode param 넣으면 안들어가지는게 정상)
+		<br><a href="/noticeboard/noticeList?classCode=5&page=1">X /noticeboard/noticeList?page=1</a>	
+		<br><a href="/noticeboard/noticeWrite"> /noticeboard/noticeWrite</a>
+		
+	</div>
+	
+	<div>/student - 로그인 하고 들어갈 것
+		<br><a th:href="@{'/student/myClass?userid=' + ${session.userid}}">myClass</a>	
+		<br><a th:href="@{'/student/myInfoModify?userid=' + ${session.userid}}">myinfo modify</a>	
+		<br><a th:href="@{'/student/classPlayer?userid=' + ${session.userid}}">class player</a>	
+		
+	<div>/teacher - 로그인 하고 들어갈 것
+		<br><a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}">teacher myClass</a>	
+		<br><a th:href="@{'/teacher/teacherMyInfoModify?userid=' + ${session.userid}}">teacher myinfo modify</a>
+		<br><a href="/teacher/classUpload">class upload</a>	
+
+		
+	<div>/manager
+		<br><a href="/manager/classUploadCheckList">class upload list</a>	
+		<br><a href="/manager/memberInfo">member information</a>	
+		
+	</div>
+
+</body>
+</html>

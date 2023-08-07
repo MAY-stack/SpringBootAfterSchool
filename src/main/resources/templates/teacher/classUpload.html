@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>AfterSchool :: 신규강좌 신청</title>
+
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+
+<script>
+	//header에 있는 로그아웃 기능
+	function logout() {
+	
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+	
+	const getCookie = (name) => {
+		
+		const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+		  let getItem = [];
+	
+		  for (let i = 0; i < cookies.length; i++) {		    
+		    if (cookies[i][0] === name) {
+		      getItem.push(cookies[i][1]);
+		      break;
+		    }
+		  }
+		  if (getItem.length > 0) {
+				console.log(getItem[0]);
+		    	return decodeURIComponent(getItem[0]);
+		  }		
+	}//end of header logout
+	//class image upload
+	window.onload = () => {
+        var imgCheck = "N";
+        var imgZone = document.querySelector('#imageZone');
+        var fileEvent = document.querySelector('#classImage');
+        
+        imgZone.addEventListener('click', (e) => {
+            fileEvent.click(e);
+        });
+        
+        //파일 선택창 열기 이벤트. 
+        fileEvent.addEventListener('change', (e) => { //파일선택해서 파일을 가져오는 거
+            const files = e.target.files; //선택한 파일 정보가 e.target.files(배열)에 저장
+            console.log("image file is " + files);
+            showImage(files); //읽어 온 파일을 인자로 받아서 이미지 미리보기를 실행
+        });
+
+        const showImage = (files) => {
+        
+            imgZone.innerHTML = '';
+            const imgFile = files[0];
+        
+            if(imgFile.type.indexOf("image") < 0) { alert("이미지 파일만 올려주세요"); imgZone.innerHTML = "[이미지 등록]";return false; }
+        
+            const reader = new FileReader();
+            reader.onload = function(event){
+                imgZone.style.backgroundImage ="url('"+event.target.result+"')"; 
+            };
+            
+            reader.readAsDataURL(imgFile);
+            console.log(event.target.value);
+            imgCheck = "Y";
+        }
+        
+ 
+       }//end of window.onload       
+        
+        //Check if the name of the class exists
+		async function classNameCheck() {
+			
+			const className = document.querySelector("#className");
+			
+			await fetch('/teacher/classNameCheck',{
+				method: "POST",
+				body: className.value,		
+			}).then((response) => response.text())
+			  .then((data) => {	
+				  //console.log("data is " + data);   
+					const idCheckNotice = document.querySelector('#idCheckNotice');
+					if(data == 0){						
+						//idCheckNotice.innerHTML = "사용 가능한 강좌 이름입니다";
+					}
+					else {
+						//idCheckNotice.innerHTML = "이미 있는 강좌 이름입니다. 다른 이름을 설정해주세요";
+						className.focus();
+					}
+			  });
+		}
+
+		  //Make more lecture list
+		  var result ='';
+		  var lectureCount = 5;
+		  function makeLectureList() {
+			lectureCount ++;
+			
+			let lectureList = document.querySelector('#lectureList');
+				result='';
+				let list = document.createElement('div');
+				list.setAttribute("id", "lecture"+lectureCount);
+				list.setAttribute("name", "lecture"+lectureCount);
+				list.setAttribute("class","UploadVideo");
+				
+				result += lectureCount + '강';
+				result += '<input type="text" id="lectureTitle' + lectureCount + '" name="lectureTitle' + lectureCount + '" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">'
+				result += '<span class="video'+lectureCount+'"></span><label for="video'+lectureCount+'" class="videoUpload_btn">영상 업로드</label>';
+				result += '<input type="file" id="video' + lectureCount + '" name=video' + lectureCount + '" accept="video/mp4,video/x-m4v,video/*" onclick="videoUploaded(this)">';
+				
+				list.innerHTML = result;
+				lectureList.appendChild(list);
+				console.log("lectureCount is " + lectureCount);
+		}
+		
+		//Delete lecture list
+		function deleteLectureList() {
+			
+			//video file delete
+			for(let i = 0; i < videoFiles.length; i++) {
+				console.log("****delete lecture list****");
+				
+				  if(videoFiles[i][0] == lectureCount)  {
+					console.log("****delete lecture list****" + videoFiles[i][0]);
+					videoFiles.splice(i, 1);
+					console.log("Deleted existing file..");
+					break;
+				  }
+			}
+			
+			//lecture title delete
+			for(let i = 0; i < lectureTitles.length; i++) {
+				console.log("****delete lecture title****");
+				
+				  if(lectureTitles[i][0] == lectureCount)  {
+					console.log("****delete lecture title****" + lectureTitles[i][0]);
+					lectureTitles.splice(i, 1);
+					console.log("Deleted existing title..");
+					break;
+				  }
+			}
+			document.querySelector('#lecture' + lectureCount).remove();
+			lectureCount --;
+			console.log("lectureCount is " + lectureCount);
+		}
+		
+		
+		//get video id and data
+		const videoFiles = new Array();
+		function videoUploaded(t) {
+			var videoID = t.id;
+			console.log("1. this video's id is : " + videoID);
+			var videoSeqno = videoID.slice(5);
+			console.log("number=" + videoSeqno);
+
+			
+			document.getElementById(videoID).addEventListener('change', function(e) {
+				
+				const videoFile = e.target.files;
+				console.log("2. videoFile is : " + event.target.value);
+					
+				//if there is already same video seqno..
+				for(let i = 0; i < videoFiles.length; i++) {
+					  if(videoFiles[i][0] === videoSeqno)  {
+						console.log("****same****");
+						videoFiles.splice(i, 1);
+						console.log("Deleted existing file..");
+						i--;
+					  }
+				}
+
+				videoFiles.push([videoSeqno, videoFile[0]]);
+				console.log("3. pushed Success");
+				for (const value of videoFiles.values()) {
+					console.log(value);
+				}
+				document.querySelector("."+videoID).innerHTML = event.target.value.substr(12);
+			});
+		}
+		
+		//get title data
+		const lectureTitles = new Array();
+		function videoTitle(t) {
+			var lectureTitleID = t.id;
+			console.log("[title] 1. this video's titleid is : " + lectureTitleID);
+			var lectureTitleSeqno = lectureTitleID.slice(12);
+			console.log("[title] number=" + lectureTitleSeqno);
+	
+			const lectureTitle = t.value;
+			
+				//if there is already same lecture title seqno..
+				for(let i = 0; i < lectureTitles.length; i++) {
+					  if(lectureTitles[i][0] === lectureTitleSeqno)  {
+						console.log("****[title] same****");
+						lectureTitles.splice(i, 1);
+						console.log("[title] Deleted existing lecture title name..");
+						i--;
+					  }
+				}
+				lectureTitles.push([lectureTitleSeqno, lectureTitle]);
+				console.log("[title] 3. pushed Success");
+				for (const value of lectureTitles.values()) {
+					console.log(value);
+				}
+		}
+	
+		//Upload
+        async function classUpload() {
+			
+			if (className.value == '') { alert("강좌 이름을 입력하세요"); className.focus(); return false;}
+			if (classDescription.value =='') { alert("강좌 소개를 입력하세요"); classDescription.focus(); return false;}
+
+			
+			let ClassUploadForm = document.getElementById('ClassUploadForm');
+			let formData = new FormData(ClassUploadForm);
+			
+			//sort by videoSeqno
+			videoFiles.sort((a, b) => a[0] - b[0]);
+			
+			const videoFileList = new Array();
+			for (let i=0; i<videoFiles.length; i++) {
+				videoFileList.push(videoFiles[i][1]);
+			}
+			
+			for (let i=0; i<videoFiles.length; i++) {
+				formData.append("VideoFileList", videoFileList[i]);
+			}
+			
+			//sort by lecture seqno
+			lectureTitles.sort((a, b) => a[0] - b[0]);
+			
+			const lectureTitleList = new Array();
+			for (let i=0; i<lectureTitles.length; i++) {
+				lectureTitleList.push(lectureTitles[i][1]);
+			}
+			
+			for (let i=0; i<lectureTitles.length; i++) {
+				formData.append("LectureTitleList", lectureTitleList[i]);
+			}
+			
+			console.log("lectureCount " + lectureCount);
+			formData.append("lectureCount", lectureCount);
+			
+			await fetch("/teacher/classUpload", {
+				method: 'POST',
+				body: formData	
+			}).then((response)=> response.json())
+			  .then((data) => {
+				  if(data.msg == 'good'){
+						alert("신규강좌 신청이 완료되었습니다! 승인 처리를 기다려주세요");
+						//console.log("data.msg = " + data.msg);
+						document.location.href='/teacher/teacherMyClass?userid=' + data.userid; //have to get session id
+					  }		
+			}).catch((error)=> { 
+				alert("시스템 장애로 신규 강좌 신청이 실패했습니다. 잠시 후에 다시 시도해주세요");
+				console.log((error)=> console.log("error = " + error))
+			});
+		}
+		
+</script>
+
+</head>
+<body>
+
+
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>관리자 페이지</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+			<!-- if session.role = student -->
+			<div th:if="${session.role == 'STUDENT'}">
+     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+     		</div>
+     		<!-- if session.role = teacher :: 이건 선생님 프로필 사진 파일 경로 정해지면 추가-->
+     		<div th:if="${session.role == 'TEACHER'}">
+     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	
+	
+	<main class="main">
+	   <div class="side-section__container" style="width:100%">
+                <div class="side-section__flex">
+
+                    <!-- sidebar menu -->
+                    <div class="side-sidebar__menu">
+                        <nav class="side-sidebar__nav">
+							
+                         	<!-- avatar -->
+	                        <img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+
+                           <h3 class="side-sidebar" style="color:black; margin-top:1rem;"><span style="font-weight:bold;">[[${session.username}]]</span> 선생님</h3>
+                            <ul class="side-sidebar__nav__list">
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" class="side-sidebar__nav__menu" >내 강좌 목록</a>
+                                </li>
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyInfoModify?userid=' + ${session.userid}}" class="side-sidebar__nav__menu">회원 정보 수정</a>
+                                </li>
+                                <li>
+                                    <a href="/teacher/classUpload" class="side-sidebar__nav__menu currentPage">신규 강좌 신청</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:logout()" class="side-sidebar__nav__menu">로그아웃</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+	<form id="ClassUploadForm" method="post" class="classUploadForm">
+		
+		<h1>신규 강좌 신청</h1>
+		
+		<!-- bar -->
+		<div class="input_container_row" style="width:100%;">
+		강좌 이름
+		<input type="text" id="className" name="className" class="input_className" placeholder="강좌 이름을 입력해주세요" onchange="classNameCheck()">
+		</div>
+
+		<div class="input_container" style="align-items:flex-start;">
+		강좌 이미지 등록
+		<div class="imageZone classUpload" id="imageZone">[이미지 등록]</div>
+		<input type="file" name="classImage" id="classImage" style="display:none;" />
+		</div>
+		<div class="input_container_row">
+
+		강좌 분류
+		
+		<select id="category" name="category" class="classUpload_category">
+			<option value="none" selected disabled hidden>강좌의 분야를 골라주세요</option>
+			<option value="A">수학</option>
+			<option value="B">영어</option>
+			<option value="C">코딩</option>
+			<option value="D">미술/공예</option>
+		</select>
+		</div>
+		<div class="input_container_row" style="width:100%;">
+		강좌 소개
+		<textarea type="text" id="classDescription" name="classDescription" class="classUplaod_description" placeholder="강좌 설명을 입력해주세요"></textarea>
+		</div>
+		
+
+		
+
+		<div class= "input_container" style='width:100%;'>
+			<div class="UploadVideo_title">강의 영상 업로드</div>
+			<div id="lecture1" name="lecture1" class="UploadVideo">
+				1강
+				<input type="text" id="lectureTitle1" name="lectureTitle1" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">
+				<span class="video1"></span><label for="video1" class="videoUpload_btn">영상 업로드</label>
+				<input type="file" id="video1" name="video1" onclick="videoUploaded(this)"  accept="video/mp4,video/x-m4v,video/*">
+
+			</div>
+			
+			<div id="lecture2" name="lecture2" class="UploadVideo">
+				2강
+				<input type="text" id="lectureTitle2" name="lectureTitle2" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">
+				<span class="video2"></span><label for="video2" class="videoUpload_btn">영상 업로드</label>
+				<input type="file" id="video2" name="video2" onclick="videoUploaded(this)"  accept="video/mp4,video/x-m4v,video/*">
+
+			</div>
+			
+			<div id="lecture3" name="lecture3" class="UploadVideo">
+				3강
+				<input type="text" id="lectureTitle3" name="lectureTitle3" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">
+				<span class="video3"></span><label for="video3" class="videoUpload_btn">영상 업로드</label>
+				<input type="file" id="video3" name="video3" onclick="videoUploaded(this)"  accept="video/mp4,video/x-m4v,video/*">
+
+			</div>
+			
+			<div id="lecture4" name="lecture4" class="UploadVideo">
+				4강
+				<input type="text" id="lectureTite4" name="lectureTitle4" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">
+				<span class="video4"></span><label for="video4" class="videoUpload_btn">영상 업로드</label>
+				<input type="file" id="video4" name="video4" onclick="videoUploaded(this)"  accept="video/mp4,video/x-m4v,video/*">
+
+			</div>
+			
+			<div id="lecture5" name="lecture5" class="UploadVideo">
+				5강
+				<input type="text" id="lectureTitle5" name="lectureTitle5" placeholder="강의 이름을 입력해주세요" onchange="videoTitle(this)">
+				<span class="video5"></span><label for="video5" class="videoUpload_btn">영상 업로드</label>
+				<input type="file" id="video5" name="video5" onclick="videoUploaded(this)"  accept="video/mp4,video/x-m4v,video/*">
+
+			</div>
+			
+			<div id="lectureList"></div>
+			<div style="text-align:right;">
+			<!-- plus button -->
+			<input type="button" value="+ 강의 수 추가하기" onclick="makeLectureList()" class="lectureCount_btn">
+			
+			<!-- minus button -->
+			<input type="button" value="- 강의 수 줄이기" onclick="deleteLectureList()" class="lectureCount_btn">
+			</div>
+			
+		</div>
+		
+		
+		<!-- class upload button -->
+		<input type="button" value="신규 강좌 신청" onclick="classUpload()" class="classUpload_btn">
+		
+		
+	</form>
+	</main>
+	
+		
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+	
+</body>
+</html>

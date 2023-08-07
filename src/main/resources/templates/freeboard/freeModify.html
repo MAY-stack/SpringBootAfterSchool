@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+<title>After School :: 자유게시판 글 수정</title>
+<link rel="stylesheet" th:href="@{/css/board.css}">
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+
+	<script>
+	
+
+
+	//header에 있는 로그아웃 기능
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+
+		const getCookie = (name) => {
+			
+			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+			  let getItem = [];
+		
+			  for (let i = 0; i < cookies.length; i++) {		    
+			    if (cookies[i][0] === name) {
+			      getItem.push(cookies[i][1]);
+			      break;
+			    }
+			  }
+			  if (getItem.length > 0) {
+					console.log(getItem[0]);
+			    	return decodeURIComponent(getItem[0]);
+			  }		
+		}//end of header logout
+	
+		const ModifyForm = async () => {
+		
+			if(title.value == '') { alert("제목을 입력하세요"); title.focus(); return false;  }
+			if(content.value =='') { alert("내용을 입력하세요"); content.focus(); return false;  }
+
+			let mForm = document.getElementById('ModifyForm');	
+		 	let formData = new FormData(mForm);
+		 	
+			//const seqno = '[[${view.seqno}]]';
+			//formData.append("seqno",parseInt(seqno));
+		 	
+			await fetch("/freeboard/freeModify?", {
+				
+				method: 'POST',
+				body: formData			
+				
+			}).then((response)=> response.json())
+			  .then((data) => {
+				  if(data.message == 'good'){
+					alert("글이 수정되었습니다.");
+		        	const seqno = '[[${view.seqno}]]';
+		        	const page = '[[${page}]]';
+		        	const searchType = '[[${searchType}]]';
+		        	const keyword = '[[${keyword}]]';
+		        	document.location.href='/freeboard/freeView?seqno='+ seqno + '&page=' + page + '&keyword=' + keyword;
+				  }	
+			}).catch((error)=> { 
+				alert("시스템 장애로 글 수정이 실패했습니다. 잠시 후에 다시 시도해주세요");
+				console.log("error = " + error);
+			}); 
+			
+		}
+	
+	</script>
+
+</head>   
+
+<body>
+
+	<script>
+		const userid = '[[${session.userid}]]';
+		if(userid == '') document.location.href='/account/login';
+	</script>
+
+  	
+
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+     			<!-- if session.role = student -->
+				<div th:if="${session.role == 'STUDENT'}">
+	     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+	     		</div>
+	     		<!-- if session.role = teacher -->
+	     		<div th:if="${session.role == 'TEACHER'}">
+	     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+	     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	  
+	
+  <main>
+	<div class="board">
+		
+		<!-- 목록으로 가는 링크 -->
+		<a href="/freeboard/freeList?page=1" class="toList_btn">자유게시판 ></a>
+		<!-- 글쓰기 버튼 -->
+		<div class="board_WM_header">
+			<div class="board_WM_title">수정 완료</div>
+			<input type="button" class="write_btn" value="수정완료" onclick="ModifyForm()" />
+			<input type="button" class="write_btn" value="취소" onclick="history.back()" />
+		</div>
+					
+		<form id="ModifyForm" class="board_WM_writForm" method="POST">
+			<div>
+				<input type="text" class="board_WM_title_input" id="title" name="title" th:value="${view.title}">
+			</div>
+			<!-- ${session.nickname} -->
+			<input type="hidden" id="writer" name="writer" th:value="${view.writer}">
+			<!-- ${session.userid} -->
+			<input type="hidden" class="userid" id="userid" name="userid" th:value="${viewId}">
+			<input type="hidden" name="page" th:value="${page}">
+			<input type="hidden" name="keyword" th:value="${keyword}">
+			<input type="hidden" name="seqno" th:value="${view.seqno}">
+			
+			<!-- 글 내용 -->
+			<div>
+				<textarea class="board_WM_content" id="content" name="content" placeholder="내용을 작성하세요" style="resize:none;">[[${view.content}]]</textarea>
+			</div>
+		</form>		
+	</div>
+	
+	</main>
+	
+		
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+</body>
+</html>

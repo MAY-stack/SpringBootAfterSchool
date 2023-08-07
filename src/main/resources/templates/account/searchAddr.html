@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>After School :: 주소검색</title>
+	<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+    <script>
+        const searchAddr = () => {
+        	if(addrSearch.value == ''){alert("검색어를 입력하세요."); addrSearch.focus(); return false;}
+            document.location.href='/account/searchAddr?page=1&addrSearch='+addrSearch.value;
+
+        }
+        const addrCheck = (zipcode, addr1,addr2,addr3) => {
+	
+            window.opener.document.getElementById("zipcode").value = zipcode;
+            window.opener.document.getElementById("addr1").value = addr1+addr2+addr3;
+            window.close();
+            
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <input type="text" name="addr" id="addrSearch">
+        <input type="button" value="검색" onclick="searchAddr()">
+    </div>
+    <table class="InfoTable">
+        <tr>
+             <th>우편번호</th>
+             <th>주소</th>
+             <th>선택</th>
+        </tr>
+       <tbody>
+            <th:block th:if="${list != null}">
+                <tr th:each="list:${list}" 
+                onMouseover="this.style.background='#46D2D2';" onmouseout="this.style.background='white';">
+                    <td th:text="${list.zipcode}"></td>
+                    <td style="text-align:left;">[[${list.province}]][[${list.road}]][[${list.building}]]<br>[[${list.oldaddr}]]</td>  
+                    <td><input type="button" value="선택" th:onclick="addrCheck([[${list.zipcode}]],[[${list.province}]],[[${list.road}]],[[${list.building}]])" > </td>
+                </tr>
+            </th:block>	
+            <th:block th:if="${list == null}">
+                <tr>
+                    <td colspan="3">검색된 주소가 없습니다.</td>
+                </tr>
+            </th:block>
+        </tbody>
+    </table>
+
+    <div>
+        [(${pageListView})]
+    </div>
+        
+</body>
+</html>

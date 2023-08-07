@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+<link th:href="@{/headerAndFooter/header.css}" rel="stylesheet" />
+<title>After School :: 아이디 찾기</title>
+
+<script>
+	const IDSearchCheck = async () => {
+		
+		if(username.value == "") { alert("이름을 입력하세요."); username.focus();  return false; }
+		if(email.value == '') { alert("이메일을 입력하세요."); email.focus(); return false; }
+		
+		let formData = new FormData(IDSearchForm);
+		
+		await fetch("/account/searchID", {			
+			method: 'POST',
+			body: formData			
+			
+		}).then((response)=> response.json())
+		  .then((data) => {
+			  if(data.msg == 'good'){				
+				document.querySelector('.float_div_bg').style.display="flex";
+				IDSearchResult.innerHTML = data.userid;
+			  } else if(data.msg == 'ID_NOT_FOUND'){
+				  alert("해당 조건에 맞는 아이디가 존재하지 않습니다.");
+			  }	
+		}).catch((error)=> {			
+			console.log("error" + error);
+		});
+		
+	}
+	
+	const copy = () => {
+		var content = document.querySelector("#IDSearchResult").innerHTML;
+		navigator.clipboard.writeText(content)
+			.then(()=>{
+				console.log("copied");
+			}).catch(err=>{
+				console.log("failed");
+			})
+	}
+	const press = () => {
+		
+		if(event.keyCode == 13){ IDSearchCheck(); }
+		
+	}
+
+</script>
+</head>
+<body>
+
+	
+	<!-- header: all -->
+	  <div class="svg-container">
+	    <svg viewbox="0 0 800 300" class="svg">
+	      <defs>
+		    <linearGradient id="gradient">
+		      <stop offset="5%" stop-color="#A6b3e0" />
+		      <stop offset="95%" stop-color="#dae3f9" />
+		    </linearGradient>
+		  </defs>
+	      <path id="curve" fill="url(#gradient)" d="M 800 200 Q 400 250 0 200 L 0 0 L 800 0 L 800 200 Z">
+	      </path>
+	    </svg>
+	  </div>
+	  <header>
+	  <a href="/main" style="text-decoration: none;">
+	    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">After School</h1>
+	    <h3>온라인 방과후 교육 프로그램</h3>
+	    </a>
+	  </header>
+	<!-- end of header: all -->
+	
+
+	<main>
+    <div class="main">
+		<div class="search">
+
+			<h1 class="search_title">아이디 찾기</h1>
+			<div class="search_container">
+				<form name="IDSearchForm" class="SearchForm" id="IDSearchForm" method="post">
+					<div class="search_input_container">
+						가입한 이름을 입력하세요
+						<input type="text" name="username" id="username" class="search_input">
+					</div>	
+					<div class="search_input_container">	
+						가입한 이메일을 입력하세요
+						<input type="text" id="email" name="email" class="search_input" onkeydown="press(this.form)">
+					</div>
+					<input type="button" id="btn_IDSearch" class="btn_Search" value="아이디 찾기" onclick="IDSearchCheck()"> 
+				</form>
+				<div class="bottomText_container search_bottomText">
+					<div><a href="/account/login">로그인</a></div><div class="line"></div>
+					<div><a href="/account/tempPassword">비밀번호 찾기</a></div><div class="line"></div>
+					<div><a href="/account/signUp">회원 가입</a></div>
+				</div>
+			</div>
+		</div>
+    </div>
+    <div class="float_div_bg" style="display:none;">
+		<div class="float_div">
+			아이디
+			<div class="tempPW_container">
+				<div id="IDSearchResult"></div>
+				<i class="fa-regular fa-copy copy_btn" style="color: #a6b3e0;" onclick="copy()" title="클립보드로 복사"></i>
+			</div>
+			<div class="temp_login_btn" onclick="location.href='/account/login'">로그인하러 가기</div>
+		</div>
+	</div>
+	
+	</main>
+	
+	<footer>
+	    <p>footer</p>
+	    <small>Go back to link<a href="/link">Click</a></small>
+	</footer>
+</body>
+</html>

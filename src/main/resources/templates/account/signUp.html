@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 회원가입</title>
+<link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+
+</head>
+<body>
+	  <header>
+	  <a href="/main" style="text-decoration: none;">
+	    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">After School</h1>
+	    <h3>다들 파이팅 ~ :)</h3>
+	    </a>
+	  </header>
+
+	<main>
+    <div class="main">
+        <div class="signUp">
+
+            <div class="signUp_container">
+             <h1 class="search_title">가입 유형</h1>
+                <div onclick="location.href='../account/signUpStudent'">나는 <span style="font-weight:bolder; font-size:3rem;">학생</span>입니다</div>
+                <div onclick="location.href='../account/signUpTeacher'">나는 <span style="font-weight:bolder; font-size:3rem;">강사</span>입니다</div>
+            </div>
+
+        </div>
+
+    </div>
+    </main>
+    
+        	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+</body>
+</html>

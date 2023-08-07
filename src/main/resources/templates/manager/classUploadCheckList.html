@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 관리자 페이지</title>
+<link th:href="@{/headerAndFooter/header.css}" rel="stylesheet" />
+
+<script>
+
+	//header에 있는 로그아웃 기능
+	function logout() {
+		
+		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+			
+			let authkey = getCookie('authkey');
+			if(authkey !== undefined)
+				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+			document.location.href='/account/logout';
+		}
+	}
+
+		const getCookie = (name) => {
+			
+			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+			  let getItem = [];
+		
+			  for (let i = 0; i < cookies.length; i++) {		    
+			    if (cookies[i][0] === name) {
+			      getItem.push(cookies[i][1]);
+			      break;
+			    }
+			  }
+			  if (getItem.length > 0) {
+					console.log(getItem[0]);
+			    	return decodeURIComponent(getItem[0]);
+			  }		
+		}//end of header logout
+</script>
+</head>
+<body>
+
+
+	<!--header-->	
+	  <div class="svg-container">
+	    <svg viewbox="0 0 800 300" class="svg">
+	      <path id="curve" fill="#BDC3E5" d="M 800 200 Q 400 250 0 200 L 0 0 L 800 0 L 800 200 Z">
+	      </path>
+	    </svg>
+	  </div>
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+	  </header>
+	  <!--end of header-->
+
+		
+		<br><br>
+		
+		<main>
+		
+	<!-- 승인 요청 목록 -->
+		<table class="">
+			<tr>
+				<th>신청일</th>
+				<th>카테고리</th>		
+				<th>강좌명</th>
+				<th>신청 강사</th>
+				<th>총 강의 수</th>
+			</tr>
+			
+			 
+			<tbody>
+			<th:block th:if="${list != null}">
+				<tr th:each="list: ${list}"  onmouseover="this.style.background='#46D2D2'" onmouseout="this.style.background='white'">
+					<td th:text="${#temporals.format(list.classUploadDate,'yyyy-MM-dd')}"></td>
+					<td th:switch="${list.category}"> <!-- 0619 -->
+					    <span th:case="A">수학</span>
+					    <span th:case="B">영어</span>
+					    <span th:case="C">코딩</span>
+					    <span th:case="D">미술/공예</span>
+					</td>
+					<td style="text-align:left"><a id="hypertext" th:href="@{'/manager/classUploadCheckView?classCode=' + ${list.classCode}}"  
+						onmouseover="this.style.textDecoration='underline'"  
+						onmouseout="this.style.textDecoration='none'"><span th:text="${list.className}"></span></a></td>
+					<td th:text="${list.username}"></td>		
+					<td th:text="${list.lectureCount}"></td>
+				</tr>	
+			</th:block>
+			<th:block th:if="${list == null}">
+				<tr>
+					<td colspan="5">신청된 강좌가 없습니다.</td>
+				</tr>
+			</th:block>	
+			</tbody>	
+		</table>
+
+		
+		</main>
+		    	
+	
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+	
+    
+
+</body>
+</html>

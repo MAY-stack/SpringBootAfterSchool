@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>After School :: 강사 회원정보 수정</title>
+    <link rel="stylesheet" th:href="@{/css/AfterSchool.css}">
+    
+    
+    <script>
+
+        window.onload = () => {
+
+        	// gender radio button 불러오기
+          	var genderValue = "[[${member.gender}]]";
+          	//console.log(genderValue);
+            if (genderValue == "M") {
+                document.getElementById("male").checked = true;
+            } else if (genderValue == "F") {
+                document.getElementById("female").checked = true;
+            }
+
+			// 주소 split
+			const str = "[[${member.address}]]";
+			const arr = str.split(":");
+			
+			console.log(arr[0]);
+			console.log(arr[1]);
+			
+			document.registerForm.addr1.value = arr[0];
+			document.registerForm.addr2.value = arr[1];
+			
+			// 수정버튼 눌렀을 때
+            document.getElementById("btn_modify").addEventListener("click", function() {
+
+                if(addr2.value == ''){
+                    alert("상세 주소를 입력하세요.");
+                    addr2.focus();
+                    return false;
+                }
+                //document.registerForm.zipcode.value = zip.value;
+
+                address.value = addr1.value + ":" + addr2.value;
+
+                if (telno.value === '') {
+                    alert("전화번호를 입력하세요.");
+                    telno.focus();
+                    return false;
+                }
+                
+                if (email.value === '') {
+                    alert("이메일을 입력하세요.");
+                    email.focus();
+                    return false;
+                }
+                // 전화번호 문자열 정리
+                const beforeTelno = telno.value;
+                const afterTelno = beforeTelno.replace(/\-/gi, "").replace(/\ /gi, "").trim();
+                telno.value = afterTelno;
+
+                if(company.value == ''){
+                    alert("소속을 입력하세요");
+                    company.focus();
+                    return false;
+                }
+                
+                if(birthdate.value == ''){
+                    alert("생년월일을 입력하세요");
+                    birthdate.focus();
+                    return false;
+                }
+                
+                
+                
+                if(intro.value == ''){
+                	alert("강사 소개를 입력하세요");
+                    intro.focus();
+                    return false;
+                }
+
+                document.getElementById("registerForm").action = "/teacher/teacherMyInfoModify";
+                document.getElementById("registerForm").submit();
+                
+                alert("회원 정보가 수정되었습니다!");
+            });
+			
+			// image drag and drop
+            var objDragAndDrop = document.getElementById("imageZone");
+
+            document.addEventListener("dragenter", function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            objDragAndDrop.style.border = '2px solid #0B85A1';
+            });
+
+            document.addEventListener("dragover", function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            });
+
+            document.addEventListener("drop", function(e) {
+            objDragAndDrop.style.border = '2px dotted #0B85A1';
+            e.preventDefault();
+            var files = e.dataTransfer.files;
+            imageView(files, objDragAndDrop);
+            });
+
+            document.addEventListener("dragenter", function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            });
+
+            document.addEventListener("dragover", function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            objDragAndDrop.style.border = '2px dotted #0B85A1';
+            });
+
+            document.addEventListener("drop", function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            imageView(files, objDragAndDrop);
+            });
+
+            // 파일 선택 대화상자 열기 클릭 이벤트
+            objDragAndDrop.addEventListener("click", function(e) {
+            document.getElementById("fileUpload").click();
+            });
+
+            document.getElementById("fileUpload").addEventListener("change", function(e) {
+            var files = e.target.files;
+            imageView(files, objDragAndDrop);
+            });
+
+        }
+		
+        
+        function imageView(f, obj) {
+            obj.innerHTML = "";
+            var imgFile = f[0];
+
+            //if(imgFile.size > 1024*1024) { alert("1MB 이하 파일만 올려주세요."); return false; }
+            if (imgFile.type.indexOf("image") < 0) {
+            alert("이미지 파일만 올려주세요");
+            return false;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+            //obj.innerHTML = "<img src='" + event.target.result + "' id='uploadImg' style='width:350px; height:auto;'>";
+            	imageZone.style.backgroundImage="url("+event.target.result+")";
+            };
+            reader.readAsDataURL(imgFile);
+            imgcheck = "Y";
+        }
+		
+        // 비밀 번호 변경하기 버튼
+        const changePassword = () => {
+            document.location.href = "/account/changePassword";
+        }
+		
+        // 주소 검색 버튼
+        const searchAddr = () => {
+            
+            window.open(
+                "/account/searchAddr?page=1",
+                "주소검색",
+                "width=900, height=540, top=50, left=50"
+            );
+        }
+        
+        // 이메일 중복 체크
+        const emailCheck = async () => {
+    		
+    		const email = document.querySelector("#email");
+    		
+    		await fetch('/account/emailCheck',{		
+    			method: "POST",
+    			body: email.value,		
+    		}).then((response) => response.text())
+    		  .then((data) => {		     
+    				const idCheckNotice = document.querySelector('#emailCheckNotice');
+    				if(data == 0)
+    					{
+    					emailCheckNotice.innerHTML = "사용 가능한 이메일입니다.";
+    					emailCheckNotice.value = 0;
+    					}
+    				else {
+    					emailCheckNotice.innerHTML = "이미 회원가입된 이메일입니다.";
+    					email.focus();
+    					emailCheckNotice.value=1;
+    				}
+    		  });
+    		
+    	}
+        
+      	//header에 있는 로그아웃 기능
+	   	function logout() {
+	   		
+	   		if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+	   			
+	   			let authkey = getCookie('authkey');
+	   			if(authkey !== undefined)
+	   				document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+	   			document.location.href='/account/logout';
+	   		}
+	   	}
+	
+   		const getCookie = (name) => {
+   			
+   			const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+   			  let getItem = [];
+   		
+   			  for (let i = 0; i < cookies.length; i++) {		    
+   			    if (cookies[i][0] === name) {
+   			      getItem.push(cookies[i][1]);
+   			      break;
+   			    }
+   			  }
+   			  if (getItem.length > 0) {
+   					console.log(getItem[0]);
+   			    	return decodeURIComponent(getItem[0]);
+   			  }		
+   		}//end of header logout
+
+    </script>
+
+</head>
+<body>
+	
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>관리자 페이지</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+			<!-- if session.role = student -->
+			<div th:if="${session.role == 'STUDENT'}">
+     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+     		</div>
+     		<!-- if session.role = teacher :: 이건 선생님 프로필 사진 파일 경로 정해지면 추가-->
+     		<div th:if="${session.role == 'TEACHER'}">
+     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	
+	
+    <!-- main -->
+    <main class="main">
+		
+	   <div class="side-section__container" style="width:100%">
+                <div class="side-section__flex">
+
+                    <!-- sidebar menu -->
+                    <div class="side-sidebar__menu">
+                        <nav class="side-sidebar__nav">
+							
+                         	<!-- avatar -->
+	                        <img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+
+                           <h3 class="side-sidebar" style="color:black; margin-top:1rem;"><span style="font-weight:bold;">[[${session.username}]]</span> 선생님</h3>
+                            <ul class="side-sidebar__nav__list">
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" class="side-sidebar__nav__menu" >내 강좌 목록</a>
+                                </li>
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyInfoModify?userid=' + ${session.userid}}" class="side-sidebar__nav__menu currentPage">회원 정보 수정</a>
+                                </li>
+                                <li>
+                                    <a href="/teacher/classUpload" class="side-sidebar__nav__menu">신규 강좌 신청</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:logout()" class="side-sidebar__nav__menu">로그아웃</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+		
+		
+        <div class="signUpStudent">
+            <div class="studentWriteForm">
+                <h1>강사 정보 수정</h1>
+                <br><br>
+
+                <form name="registerForm" id="registerForm" class="RegistryForm" method="post" enctype="multipart/form-data">
+                    <div class="input_container">
+                        프로필 사진 (1:1 비율의 사진을 권장합니다)
+                        <div id="imageZone" class="imageZone"><img th:src="@{'/profile/' + ${member.storedProfilename}}" style='width:15rem; height:15rem;'></div>
+                            <input type="file" name="fileUpload" id="fileUpload" style="display:none;" />
+                            <input type="hidden" name="storedProFilename" th:value="${member.storedProfilename}">
+                        </div>
+                    <br>
+
+                    <div class="userid_container input_container">
+                        아이디
+                        <input type="text" name="userid" id="userid" class="input_field" th:value="${member.userid}" readonly>
+                        <input type="button" id="btn_changePassword" class="btn_changePassword" value="비밀번호 변경하기" onclick="changePassword()">
+                    </div>
+                    <br>
+                    
+                    <div class="email_container input_container">
+                        이메일
+                        <input type="text" name="email" id="email" class="input_field" th:value="${member.email}" onchange="emailCheck()">
+                        <div id="emailCheckNotice"></div>
+                    </div>
+
+                    <div class="email_container input_container">
+                        이름
+                        <input type="text" name="username" id="username" class="input_field" th:value="${member.username}" readonly>
+                    </div>
+                    
+                    <div class="email_container input_container">
+                        소속
+                        <input type="text" name="company" id="company" class="input_field" th:value="${member.company}">
+                    </div>
+
+                    <div class="input_container_row">
+                        <div class="telno_container input_container">
+                            전화번호
+                            <input type="text" name="telno" id="telno" class="input_field" th:value="${member.telno}">
+                        </div>
+                        <div class="gender_container input_container">
+                            성별
+                            <div class="gender_radio_container input_container_row">
+                                <label><input type="radio" name="gender" id="male" value="M" disabled><div class="gender_radio">남</div></label>
+                                <label><input type="radio" name="gender" id="female" value="F" disabled><div class="gender_radio">여</div></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="addr_container input_container">
+                        주소
+                        <div class="addr_input">
+                            <input type="text" id="addr1" class="input_field" name="addr1" th:value="${member.address}" readonly>
+                            <input type="button" id="btn_addrSearch" class="btn_addrSearch" value="검색" onclick="searchAddr()">
+                        </div>
+                        <input type="hidden" name="zipcode" id="zipcode" class="input_field">
+                        상세주소
+                        <input type="text" id="addr2" class="input_field" name="addr2" placeholder="변경할 상세주소를 입력하세요" >
+                        <input type="hidden" name="address" id="address">
+                    </div>
+
+                    <div class="email_container input_container">
+                        생년월일
+                        <input type="text" name="birthdate" id="birthdate" class="input_field" th:value="${member.birthdate}" readonly>
+                    </div>
+                    
+                    <div class="input_container">
+                        강사 한줄 소개
+                        <input type="text" id="intro_line" class="input_field" th:value="${member.introduceLine}" disabled> <!-- 0619 수정 -->
+                    </div>
+                    
+                    <input type="hidden" name="introduceLine" class="input_field" th:value="${member.introduceLine}"> <!-- 0619 수정 -->
+                    
+                    
+                    <div class="input_container">
+                        강사 소개
+                        <br>
+                        <textarea cols="50" rows="15" id="intro" name="introduce" class="input_field" th:text="${member.introduce}" style="resize:none;"></textarea>
+                    </div>
+                    
+                    <input type="button" id="btn_modify" class="btn_modify" value="회원 정보 수정">
+
+                </form>
+            </div>
+        </div>
+    </main>
+    <!-- end of main -->
+    
+    <footer>
+	    <p>footer</p>
+	    <small>Go back to link<a href="/link">Click</a></small>
+	</footer>
+
+</body>
+</html>

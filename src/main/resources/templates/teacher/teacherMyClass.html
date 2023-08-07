@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>After School :: 강사 내 강좌 목록</title>
+<link th:href="@{/css/AfterSchool.css}" rel="stylesheet" />
+<link th:href="@{/css/tabMenu.css}" rel="stylesheet" />
+<script>
+
+
+//header에 있는 로그아웃 기능
+function logout() {
+	
+	if(confirm('로그아웃하시겠습니까? 자동로그인도 해제됩니다')) {
+		
+		let authkey = getCookie('authkey');
+		if(authkey !== undefined)
+			document.cookie = 'authkey=' + authkey + '; path=/; max-age=0';
+		document.location.href='/account/logout';
+	}
+}
+
+	const getCookie = (name) => {
+		
+		const cookies = document.cookie.split(`; `).map((el) => el.split('='));
+		  let getItem = [];
+	
+		  for (let i = 0; i < cookies.length; i++) {		    
+		    if (cookies[i][0] === name) {
+		      getItem.push(cookies[i][1]);
+		      break;
+		    }
+		  }
+		  if (getItem.length > 0) {
+				console.log(getItem[0]);
+		    	return decodeURIComponent(getItem[0]);
+		  }		
+	}//end of header logout
+	
+</script>
+
+</head>
+<body>
+	
+	<!--header-->	
+	  <header>
+		  	<a href="/main" style="text-decoration: none; text-align: left;">
+			    <h1 style="color: white; font-family: 'Ubuntu', sans-serif;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After School</h1>
+	    	</a>
+
+		<div th:if="${session.userid != null}">
+		<!-- if userid != null -->
+	    	<div class="dots" onclick="this.classList.toggle('active');">
+			  <div class="container cut">
+			    <div class="drop cut2"></div>
+			  </div>
+			  <div class="list">
+			    <ul>
+					<!--if role == student -->
+					<div th:if="${session.role == 'STUDENT'}">
+					<a th:href="@{'/student/myClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강의실</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == teacher -->
+					<div th:if="${session.role == 'TEACHER'}">
+					<a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" style="text-decoration: none;">
+						<li>내 강좌 목록</li>
+			      	</a>
+			      	</div>
+			      	<!--if role == manager -->
+					<div th:if="${session.role == 'MANAGER'}">
+					<a href="/manager/memberInfo" style="text-decoration: none;">
+						<li>관리자 페이지</li>
+			      	</a>
+			      	</div>
+			  		<a href="javascript:logout()" style="text-decoration: none;">
+			    		<li style="margin-top:50px;">로그아웃</li>
+			   		</a>
+			    </ul>
+			  </div>
+			  <div class="dot"></div>
+			</div>
+			<div class="cursor" onclick="document.querySelector('.dots').classList.toggle('active');">
+			<!-- if session.role = student -->
+			<div th:if="${session.role == 'STUDENT'}">
+     			<img th:src="@{'/images/avatar/' + ${session.avatar} + '.png'}" style="height: 100px;">
+     		</div>
+     		<!-- if session.role = teacher :: 이건 선생님 프로필 사진 파일 경로 정해지면 추가-->
+     		<div th:if="${session.role == 'TEACHER'}">
+     			<img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+     		</div>
+     		</div>
+     	</div>
+	  </header>
+	  <!--end of header-->
+	
+	
+	  
+	  
+	
+    <main class="main">
+		
+        <div class="side-section__container" style="width:100%">
+                <div class="side-section__flex">
+
+                    <!-- sidebar menu -->
+                    <div class="side-sidebar__menu">
+                        <nav class="side-sidebar__nav">
+							
+                         	<!-- avatar -->
+	                        <img th:src="@{'/profile/' + ${session.profile}}" style="height: 100px;">
+
+                           <h3 class="side-sidebar" style="color:black; margin-top:1rem;"><span style="font-weight:bold;">[[${session.username}]]</span> 선생님</h3>
+                            <ul class="side-sidebar__nav__list">
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyClass?userid=' + ${session.userid}}" class="side-sidebar__nav__menu currentPage" >내 강좌 목록</a>
+                                </li>
+                                <li>
+                                    <a th:href="@{'/teacher/teacherMyInfoModify?userid=' + ${session.userid}}" class="side-sidebar__nav__menu">회원 정보 수정</a>
+                                </li>
+                                <li>
+                                    <a href="/teacher/classUpload" class="side-sidebar__nav__menu">신규 강좌 신청</a>
+                                </li>
+                                <li>
+                                    <a href="javascript:logout()" class="side-sidebar__nav__menu">로그아웃</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+
+                    <!-- my section -->
+                    <section class="me-section">
+                        <div class="mypage__header">
+                            <h2 class="title">내 강좌 목록</h2>
+                        </div>
+                        
+                        <!-- bar -->
+                        
+                        <div class="me-panel">
+                            <div class="me-panel__cell">
+                                <div class="tab-wrapper" style="width:80%; right:-10%;">
+                                    <!-- 강좌 목록 -->
+                                    <div class="tab-item">
+                                        <input type="radio" name="tabGroup" id="tab1" value="1" checked>
+                                        <label for="tab1" class="tab-label">강좌 목록</label>
+                                        <div class="tab-content">
+                                                <!-- my courses -->
+					                            <section class="me-courses">
+					                            
+													<th:block th:if="${list1 == null}">
+														<tr>
+															<td colspan="5">승인된 강좌가 없습니다</td>
+														</tr>
+													</th:block>	
+													
+													<th:block th:if="${list1 != null}">
+													<tr th:each="list1 : ${list1}">
+														<td>
+							                               
+							                                    <div class="me-courses__item">
+							                                        <div class="me-courses__cont">
+																		<div class="me-courses__header">
+																		<!-- class category -->
+																		<!-- <span th:text="${list1.category}"></span> -->
+																		<th:block th:switch = "${list1.category}"> <!-- 0619 카테고리 수정 -->
+																			<span th:case="A">수학</span>
+																		    <span th:case="B">영어</span>
+																		    <span th:case="C">코딩</span>
+																		    <span th:case="D">미술/공예</span>
+																		</th:block>
+																		
+																		<!-- class name -->
+																		<a th:href="@{'/search/classInfo?classCode=' + ${list1.classCode}}"  class="me-courses__title"><span th:text="${list1.className}"></span></a>
+																		
+																		<!-- go to class notice board -->
+																		<a th:href="@{'/noticeboard/noticeList?classCode=' + ${list1.classCode} + '&page=1'}" class="me-courses__noticeboard">해당 강좌 공지게시판 바로가기</a>
+																		</div>
+																		
+																		<div class="me-courses__body">
+																		<!-- class classUploadDate -->
+																		<div>
+																		강좌 등록 날짜 : <span th:text="${#temporals.format(list1.classUploadDate,'yyyy/MM/dd')}"></span>
+																		</div>
+																		
+																		<!-- lecture count -->
+																		<div>
+																		총 <span th:text="${list1.lectureCount}"></span>강
+																		</div>
+																		</div>
+																		
+																		<br>
+																		<div class="me-courses__bottom">
+																		<!-- student count -->
+																		수강신청한 학생 수:&nbsp;<span th:text="${list1.registeredStudentCnt}"></span>명 &nbsp;
+																		수강완료한 학생 수:&nbsp;<span th:text="${list1.finishedStudentCnt}"></span>명 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+																		
+																		<!-- average rate -->
+																		평균별점 :&nbsp;	<div class="star_bar"><span id="starBar" th:style="@{'width:calc('+${list1.avgRate}+' * 20%)'}"></span><div class="star_mask"></div></div>&nbsp;<span th:text="${list1.avgRate}"></span>
+																		</div>
+					
+							                                            
+							                                        </div>
+							                                    </div>
+							                            
+					                                
+					                                
+					                                	</td>
+					                                	
+													</tr>
+													</th:block>
+					
+					                            </section>
+                                        </div>
+                                    </div> <!-- end of tab1 tab item -->
+                                    
+                                    
+                                    <!-- 승인 대기 -->
+                                    <div class="tab-item">
+                                        <input type="radio" name="tabGroup" id="tab2" value="2">
+                                        <label for="tab2" class="tab-label">승인 대기</label>
+                                        <div class="tab-content">
+                                                <!-- my courses -->
+					                            <section class="me-courses">
+													
+													<th:block th:if="${list2 == null}">
+														<tr>
+															<td colspan="5">승인 대기중인 강좌가 없습니다</td>
+														</tr>
+													</th:block>	
+													
+													<th:block th:if="${list2 != null}">
+													
+													<tr th:each="list2 : ${list2}">
+														<td>
+							                               
+							                                    <div class="me-courses__item">
+							                                        <div class="me-courses__cont">
+																		<div class="me-courses__header">
+																		<!-- class category -->
+																		<!-- <span th:text="${list2.category}"></span> -->
+																		<th:block th:switch = "${list2.category}"> <!-- 0619 카테고리 수정 -->
+																			<span th:case="A">수학</span>
+																		    <span th:case="B">영어</span>
+																		    <span th:case="C">코딩</span>
+																		    <span th:case="D">미술/공예</span>
+																		</th:block>
+																		
+																		<!-- class name -->
+																		<a class="me-courses__title"><span th:text="${list2.className}"></span></a>
+																		</div>
+																		<br><br>
+																		<div class="me-courses__bottom">
+																		<!-- class classUploadDate -->
+																		강좌 신청 날짜 : <span th:text="${#temporals.format(list2.classUploadDate,'yyyy/MM/dd')}"></span>
+																		
+																		<!-- lecture count -->
+																		<span th:text="${list2.lectureCount}"></span>
+																		</div>
+							                                            
+							                                        </div>
+							                                    </div>
+							                              
+					                                
+					                                
+					                                	</td>
+													</tr>
+													</th:block>
+					
+					                            </section>
+					                            </div>
+                                    </div> <!-- end of tab2 tab item -->
+                                    
+                                    
+                                    <!-- 승인 거절 -->
+                                    <div class="tab-item">
+                                        <input type="radio" name="tabGroup" id="tab3" value="3">
+                                        <label for="tab3" class="tab-label">승인 거절</label>
+                                        <div class="tab-content">
+                                                <!-- my courses -->
+					                            <section class="me-courses">
+													
+													<th:block th:if="${list3 == null}">
+														<tr>
+															<td colspan="5">승인 거절된 강좌가 없습니다</td>
+														</tr>
+													</th:block>	
+													
+													<th:block th:if="${list3 != null}">
+													
+													<tr th:each="list3 : ${list3}">
+														<td>
+							                                <div class="me-courses__box">
+							                                    <div class="me-courses__item">
+							                                        <div class="me-courses__cont">
+																		<div class="me-courses__header">
+																		<!-- class category -->
+																		<th:block th:switch = "${list3.category}"> <!-- 0619 카테고리 수정 -->
+																			<span th:case="A">수학</span>
+																		    <span th:case="B">영어</span>
+																		    <span th:case="C">코딩</span>
+																		    <span th:case="D">미술/공예</span>
+																		</th:block>
+																		
+																		<!-- class name -->
+																		<a class="me-courses__title"><span th:text="${list3.className}"></span></a>
+																		</div>
+																		<br><br>
+																		<div class="me-courses__bottom">
+																		<!-- class classUploadDate -->
+																		강좌 신청 날짜 : <span th:text="${#temporals.format(list3.classUploadDate,'yyyy/MM/dd')}"></span>
+																		
+																		<!-- lecture count -->
+																		<span th:text="${list3.lectureCount}"></span>
+																		</div>
+							                                            
+							                                        </div>
+							                                    </div>
+							                                </div>
+					                                
+					                                
+					                                	</td>
+													</tr>
+					
+					                            </section>
+                                        </div>
+                                        
+                                    </div> <!-- end of tab3 tab item-->
+
+                                </div> <!-- end of tab wrapper -->
+                            </div>
+
+
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </div>
+    </main>
+  <footer>
+    <p>footer</p>
+    <small>Go back to link<a href="/link">Click</a></small>
+  </footer>
+</body>
+</html>
